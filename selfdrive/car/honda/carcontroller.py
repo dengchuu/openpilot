@@ -63,6 +63,7 @@ class CarController(object):
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
     self.new_radar_config = False
+    self.auto_ACC_resume = false
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -81,6 +82,12 @@ class CarController(object):
     if not enabled and CS.pcm_acc_status:
       # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
       pcm_cancel_cmd = True
+    
+    elif enabled:
+      self.auto_ACC_resume = True
+
+    elif not enabled and CS.brakePressed:
+      self.auto_ACC_resume = False
 
     # *** rate limit after the enable check ***
     self.brake_last = rate_limit(brake, self.brake_last, -2., 1./100)
@@ -136,7 +143,11 @@ class CarController(object):
 
     # Send steering command.
     idx = frame % 4
-    can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, lkas_active, CS.CP.carFingerprint, idx))
+    if not CS.steer_override and not CS.blinker_on:
+      can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, lkas_active, CS.CP.carFingerprint, idx))
+
+    if not enabled and self.auto_ACC_resume and not CS.gasPressed and not CS.brakePressed:
+      can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
 
     # Send dashboard UI commands.
     if (frame % 10) == 0:
