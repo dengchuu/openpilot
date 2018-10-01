@@ -155,6 +155,7 @@ class CarController(object):
       pcm_cancel_cmd = False
       enabled = True
       CS.CP.enableCruise = True
+      #CS.pedal_gas = 1
       can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
 
     # Send dashboard UI commands.
