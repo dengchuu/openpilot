@@ -552,6 +552,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
     prof.checkpoint("Plan")
 
     if not passive:
+      
       if not CS.gasPressed and not CS.brakePressed:
         if (state not in [State.enabled, State.softDisabling] and AutoACCResume):
           state = State.enabled
