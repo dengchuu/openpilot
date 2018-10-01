@@ -144,15 +144,22 @@ class CarController(object):
     # Send steering command.
     idx = frame % 4
 
+    if (CS.steer_override and (abs(apply_steer) != apply_steer) != (abs(CS.steer_torque_driver) != CS.steer_torque_driver)) or CS.blinker_on:
+      apply_steer = 0
+
     # only issue steering command IF the blinkers are OFF and the driver is NOT applying significant torque in the other direction
-    if (not CS.steer_override or CS.steer_torque_driver / apply_steer >= 0) and not CS.blinker_on:
-      can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, lkas_active, CS.CP.carFingerprint, idx))
+    can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, lkas_active, CS.CP.carFingerprint, idx))
 
     if not enabled and self.auto_ACC_resume and CS.pedal_gas == 0 and CS.brake_pressed == 0:
+      print "spammed"
+      pcm_cancel_cmd = False
+      enabled = True
+      CS.CP.enableCruise = True
       can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
 
     # Send dashboard UI commands.
     if (frame % 10) == 0:
+      #print ("%d %d" % (CS.pedal_gas, CS.brake_pressed))
       idx = (frame/10) % 4
       can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, idx))
 
