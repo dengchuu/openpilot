@@ -28,6 +28,8 @@ from selfdrive.controls.lib.driver_monitor import DriverStatus
 ThermalStatus = log.ThermalData.ThermalStatus
 State = log.Live100Data.ControlState
 NoSteering = False
+NoBeeps = False
+AutoACCResume = False
 
 
 class Calibration:
@@ -235,6 +237,14 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
                   driver_status, PL, LaC, LoC, VM, angle_offset, passive, is_metric, cal_perc):
   # Given the state, this function returns the actuators
   global NoSteering
+  global NoBeeps
+  global AutoACCResume
+
+  if not CS.gasPressed and not CS.brakePressed:
+        if (state not in [State.enabled, State.softDisabling] and AutoACCResume):
+          state = State.enabled
+        elif (state in [State.enabled]):
+          AutoACCResume = True
 
   # reset actuators to zero
   actuators = car.CarControl.Actuators.new_message()
@@ -437,7 +447,9 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
   set_realtime_priority(3)
 
   global NoSteering
+  global AutoACCResume
   NoSteering = False
+  AutoACCResume = False
 
   context = zmq.Context()
   params = Params()
@@ -540,6 +552,12 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
     prof.checkpoint("Plan")
 
     if not passive:
+      if not CS.gasPressed and not CS.brakePressed:
+        if (state not in [State.enabled, State.softDisabling] and AutoACCResume):
+          state = State.enabled
+        elif (state in [State.enabled]):
+          AutoACCResume = True
+
       # update control state
       state, soft_disable_timer, v_cruise_kph, v_cruise_kph_last = \
         state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM)
