@@ -86,7 +86,7 @@ class CarController(object):
     elif enabled:
       self.auto_ACC_resume = True
 
-    elif not enabled and CS.CP.brakePressed:
+    elif not enabled and CS.brake_pressed != 0:
       self.auto_ACC_resume = False
 
     # *** rate limit after the enable check ***
@@ -148,7 +148,7 @@ class CarController(object):
     if (not CS.steer_override or CS.steer_torque_driver / apply_steer >= 0) and not CS.blinker_on:
       can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, lkas_active, CS.CP.carFingerprint, idx))
 
-    if not enabled and self.auto_ACC_resume and not CS.CP.gasPressed and not CS.CP.brakePressed:
+    if not enabled and self.auto_ACC_resume and CS.pedal_gas = 0 and CS.brake_pressed = 0:
       can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
 
     # Send dashboard UI commands.
