@@ -469,6 +469,7 @@ class CarInterface(object):
         but = self.CS.prev_cruise_setting
       if but == 1:
         be.type = 'altButton1'
+        self.CC.auto_Steer = not self.CC.auto_Steer
       # TODO: more buttons?
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
@@ -513,18 +514,16 @@ class CarInterface(object):
     if (ret.gasPressed and not self.gas_pressed_prev) or \
        (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
       #print "disabled"
-      events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
+      #events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
       self.CC.do_ACC_resume = False
 
     if ret.gasPressed or (not ret.gasPressed and self.gas_pressed_prev and self.CC.auto_ACC_resume):
-      events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
+      #events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
       self.CC.do_ACC_resume = False
     
     elif not ret.cruiseState.enabled and not ret.brakePressed and self.CC.auto_ACC_resume:
       print "do it now"
-      events.append(create_event('buttonEnable', [ET.ENABLE]))
-      #self.last_enable_pressed = sec_since_boot()
-      #self.last_enable_sent = 0
+      #events.append(create_event('buttonEnable', [ET.ENABLE]))
       self.CC.do_ACC_resume = True
 
     # it can happen that car cruise disables while comma system is enabled: need to
@@ -540,7 +539,6 @@ class CarInterface(object):
 
     cur_time = sec_since_boot()
     enable_pressed = False # self.CC.do_ACC_resume
-
 
     # handle button presses
     for b in ret.buttonEvents:

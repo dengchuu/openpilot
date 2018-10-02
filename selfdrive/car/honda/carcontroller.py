@@ -65,6 +65,7 @@ class CarController(object):
     self.new_radar_config = False
     self.auto_ACC_resume = False
     self.do_ACC_resume = False
+    self.auto_Steer = True
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -145,7 +146,7 @@ class CarController(object):
     # Send steering command.
     idx = frame % 4
 
-    if (CS.steer_override and (abs(apply_steer) != apply_steer) != (abs(CS.steer_torque_driver) != CS.steer_torque_driver)) or CS.blinker_on:
+    if (CS.steer_override and (abs(apply_steer) != apply_steer) != (abs(CS.steer_torque_driver) != CS.steer_torque_driver)) or CS.blinker_on or not self.auto_Steer:
       #print "no steering"
       apply_steer = 0
 
