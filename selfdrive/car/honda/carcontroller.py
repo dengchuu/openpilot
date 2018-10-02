@@ -66,6 +66,8 @@ class CarController(object):
     self.auto_ACC_resume = False
     self.do_ACC_resume = False
     self.auto_Steer = True
+    self.ACC_Disable_Time = 0.
+    self.ACC_Permitted_Time = 0.
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -157,11 +159,14 @@ class CarController(object):
 
     #pcm_cancel_cmd = False
 
-    if enabled:
+    if enabled and self.ACC_Disable_Time > 0.:
       self.do_ACC_resume = False
+      self.ACC_Disable_Time = 0.
+      self.ACC_Disable_Time = 0.
+      print ("ACC_Disable cleared")
 
     if not enabled and self.do_ACC_resume and self.auto_ACC_resume and CS.pedal_gas == 0 and CS.brake_pressed == 0:
-      print "Spammed!"
+      print ("Spammed!")
       can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
 
     # Send dashboard UI commands.

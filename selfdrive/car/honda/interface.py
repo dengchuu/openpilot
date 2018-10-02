@@ -515,6 +515,8 @@ class CarInterface(object):
     if (ret.gasPressed and not self.gas_pressed_prev) or \
        (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
+      self.CC.ACC_Disabled = sec_since_boot()
+      self.CC.ACC_Permitted = 0.
 
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
@@ -556,7 +558,7 @@ class CarInterface(object):
       # do disable on button down
       if b.type == "cancel" and b.pressed:
         events.append(create_event('buttonCancel', [ET.USER_DISABLE]))
-    print self.CP.enableCruise
+
     if self.CP.enableCruise:
       # KEEP THIS EVENT LAST! send enable event if button is pressed and there are
       # NO_ENTRY events, so controlsd will display alerts. Also not send enable events
@@ -568,17 +570,17 @@ class CarInterface(object):
          (enable_pressed and get_events(events, [ET.NO_ENTRY])):
         events.append(create_event('buttonEnable', [ET.ENABLE]))
         self.last_enable_sent = cur_time
-        print "enable sent"
+        print ("enable sent")
+        self.CC.ACC_Permitted = cur_time
     elif enable_pressed:
       events.append(create_event('buttonEnable', [ET.ENABLE]))
       
-    if (cur_time - self.last_enable_pressed) > 0.2 and \
-       (cur_time - self.last_enable_sent) > 0.4 and not ret.gasPressed and \
-       not ret.brakePressed and self.CC.auto_ACC_resume:
+    if not ret.cruiseState.enabled and not ret.brakePressed and self.CC.auto_ACC_resume and \
+        self.CC.ACC_Disabled > 0. and (cur_time - self.CC.ACC_Disabled) > 2.0 and \
+        self.CC.ACC_Permitted > 0. and (cur_time - self.CC.ACC_Permitted) > 1.0:
 
-        print "do it now"
+        print ("do it now")
         self.CC.do_ACC_resume = True
-          
 
     ret.events = events
     ret.canMonoTimes = canMonoTimes
