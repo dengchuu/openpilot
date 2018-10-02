@@ -518,20 +518,17 @@ class CarInterface(object):
 
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
-      #self.last_enable_sent = sec_since_boot() - 0.5
-    
-    elif not self.CP.enableCruise and not ret.gasPressed and self.gas_pressed_prev and not ret.brakePressed and self.CC.auto_ACC_resume:
-      print "do it now"
-      #ret.gasPressed = True
-      #ret.cruiseState.enabled = True
-      #self.CP.enableCruise = True
-      be = car.CarState.ButtonEvent.new_message()
-      be.type = 'unknown'
-      be.pressed = True
-      but = self.CS.cruise_buttons
-      but = CruiseButtons.RES_ACCEL
-      be.type = 'accelCruise'
-      buttonEvents.append(be)
+      
+    #  #ret.gasPressed = True
+    #  #ret.cruiseState.enabled = True
+    #  #self.CP.enableCruise = True
+    #  be = car.CarState.ButtonEvent.new_message()
+    #  be.type = 'unknown'
+    #  be.pressed = True
+    #  but = self.CS.cruise_buttons
+    #  but = CruiseButtons.RES_ACCEL
+    #  be.type = 'accelCruise'
+    #  buttonEvents.append(be)
 
     # it can happen that car cruise disables while comma system is enabled: need to
     # keep braking if needed or if the speed is very low
@@ -545,7 +542,8 @@ class CarInterface(object):
       events.append(create_event('manualRestart', [ET.WARNING]))
 
     cur_time = sec_since_boot()
-    enable_pressed = self.CC.auto_ACC_resume
+
+    enable_pressed = False 
 
     # handle button presses
     for b in ret.buttonEvents:
@@ -558,7 +556,7 @@ class CarInterface(object):
       # do disable on button down
       if b.type == "cancel" and b.pressed:
         events.append(create_event('buttonCancel', [ET.USER_DISABLE]))
-
+    print self.CP.enableCruise
     if self.CP.enableCruise:
       # KEEP THIS EVENT LAST! send enable event if button is pressed and there are
       # NO_ENTRY events, so controlsd will display alerts. Also not send enable events
@@ -570,8 +568,17 @@ class CarInterface(object):
          (enable_pressed and get_events(events, [ET.NO_ENTRY])):
         events.append(create_event('buttonEnable', [ET.ENABLE]))
         self.last_enable_sent = cur_time
+        print "enable sent"
     elif enable_pressed:
       events.append(create_event('buttonEnable', [ET.ENABLE]))
+      
+    if (cur_time - self.last_enable_pressed) > 0.2 and \
+       (cur_time - self.last_enable_sent) > 0.4 and not ret.gasPressed and \
+       not ret.brakePressed and self.CC.auto_ACC_resume:
+
+        print "do it now"
+        self.CC.do_ACC_resume = True
+          
 
     ret.events = events
     ret.canMonoTimes = canMonoTimes
