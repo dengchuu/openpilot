@@ -520,14 +520,16 @@ class CarInterface(object):
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
       self.CC.do_ACC_resume = False
     
-    elif not c.enabled and not ret.brakePressed and self.CC.auto_ACC_resume:
+    elif not ret.cruiseState.enabled and not ret.brakePressed and self.CC.auto_ACC_resume:
       print "do it now"
-      events.append(create_event('pedalPressed', [ET.ENABLE]))
+      events.append(create_event('buttonEnable', [ET.ENABLE]))
+      #self.last_enable_pressed = sec_since_boot()
+      #self.last_enable_sent = 0
       self.CC.do_ACC_resume = True
 
     # it can happen that car cruise disables while comma system is enabled: need to
     # keep braking if needed or if the speed is very low
-    if self.CP.enableCruise and not ret.cruiseState.enabled and c.actuators.brake <= 0.:
+    if not self.CC.auto_ACC_resume and self.CP.enableCruise and not ret.cruiseState.enabled and c.actuators.brake <= 0.:
       # non loud alert if cruise disbales below 25mph as expected (+ a little margin)
       if ret.vEgo < self.CP.minEnableSpeed + 2.:
         events.append(create_event('speedTooLow', [ET.IMMEDIATE_DISABLE]))
@@ -537,7 +539,7 @@ class CarInterface(object):
       events.append(create_event('manualRestart', [ET.WARNING]))
 
     cur_time = sec_since_boot()
-    enable_pressed = self.CC.do_ACC_resume
+    enable_pressed = False # self.CC.do_ACC_resume
 
 
     # handle button presses
