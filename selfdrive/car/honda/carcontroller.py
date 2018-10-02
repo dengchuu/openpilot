@@ -146,7 +146,7 @@ class CarController(object):
     idx = frame % 4
 
     if (CS.steer_override and (abs(apply_steer) != apply_steer) != (abs(CS.steer_torque_driver) != CS.steer_torque_driver)) or CS.blinker_on:
-      print "no steering"
+      #print "no steering"
       apply_steer = 0
 
     # only issue steering command IF the blinkers are OFF and the driver is NOT applying significant torque in the other direction
@@ -161,7 +161,7 @@ class CarController(object):
       #enabled = True
       #CS.CP.enableCruise = True
       #CS.pedal_gas = 1
-      self.do_ACC_resume = False
+      #self.do_ACC_resume = False
       can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
 
     # Send dashboard UI commands.
