@@ -64,6 +64,7 @@ class CarController(object):
     self.packer = CANPacker(dbc_name)
     self.new_radar_config = False
     self.auto_ACC_resume = False
+    self.do_ACC_resume = False
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -145,17 +146,22 @@ class CarController(object):
     idx = frame % 4
 
     if (CS.steer_override and (abs(apply_steer) != apply_steer) != (abs(CS.steer_torque_driver) != CS.steer_torque_driver)) or CS.blinker_on:
+      print "no steering"
       apply_steer = 0
 
     # only issue steering command IF the blinkers are OFF and the driver is NOT applying significant torque in the other direction
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, lkas_active, CS.CP.carFingerprint, idx))
 
-    if not enabled and self.auto_ACC_resume and CS.pedal_gas == 0 and CS.brake_pressed == 0:
-      print "spammed"
+    if enabled:
+      self.do_ACC_resume = False
+
+    if not enabled and self.do_ACC_resume and self.auto_ACC_resume and CS.pedal_gas == 0 and CS.brake_pressed == 0:
+      print "CS.CP.enabledGasInterceptor"
       pcm_cancel_cmd = False
-      enabled = True
-      CS.CP.enableCruise = True
+      #enabled = True
+      #CS.CP.enableCruise = True
       #CS.pedal_gas = 1
+      self.do_ACC_resume = False
       can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
 
     # Send dashboard UI commands.

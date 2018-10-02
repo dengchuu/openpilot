@@ -510,12 +510,17 @@ class CarInterface(object):
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
 
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
-    if ((ret.gasPressed and not self.gas_pressed_prev and not self.CC.auto_ACC_enable) or \
-       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001):
+    if (ret.gasPressed and not self.gas_pressed_prev) or \
+       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
+      #print "disabled"
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
-    if ret.gasPressed or self.CC.auto_:
+    if ret.gasPressed or (not ret.gasPressed and self.gas_pressed_prev and self.CC.auto_ACC_resume):
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
+      self.CC.do_ACC_resume = False
+    elif not c.enabled and not ret.brakePressed and self.CC.auto_ACC_resume:
+      print "do it now"
+      self.CC.do_ACC_resume = True
 
     # it can happen that car cruise disables while comma system is enabled: need to
     # keep braking if needed or if the speed is very low
@@ -529,7 +534,9 @@ class CarInterface(object):
       events.append(create_event('manualRestart', [ET.WARNING]))
 
     cur_time = sec_since_boot()
-    enable_pressed = False
+    enable_pressed = self.CC.do_ACC_resume
+
+
     # handle button presses
     for b in ret.buttonEvents:
 
