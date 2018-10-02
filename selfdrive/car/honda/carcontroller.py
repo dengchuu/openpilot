@@ -146,19 +146,22 @@ class CarController(object):
     # Send steering command.
     idx = frame % 4
 
-    if (CS.steer_override and (abs(apply_steer) != apply_steer) != (abs(CS.steer_torque_driver) != CS.steer_torque_driver)) or CS.blinker_on or not self.auto_Steer:
-      #print "no steering"
+    if (CS.steer_override and (abs(apply_steer) != apply_steer) != (abs(CS.steer_torque_driver) != CS.steer_torque_driver)) or \
+          CS.blinker_on or not self.auto_Steer:
+      print ("%d %d" % (CS.steer_torque_driver, apply_steer))
       apply_steer = 0
 
     # only issue steering command IF the blinkers are OFF and the driver is NOT applying significant torque in the other direction
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, lkas_active, CS.CP.carFingerprint, idx))
 
+    #pcm_cancel_cmd = False
+
     if enabled:
       self.do_ACC_resume = False
 
     if not enabled and self.do_ACC_resume and self.auto_ACC_resume and CS.pedal_gas == 0 and CS.brake_pressed == 0:
-      print "CS.CP.enabledGasInterceptor"
-      pcm_cancel_cmd = False
+      print "Spammed!"
+      #pcm_cancel_cmd = False
       #enabled = True
       #CS.CP.enableCruise = True
       #CS.pedal_gas = 1
