@@ -469,6 +469,7 @@ class CarInterface(object):
         but = self.CS.prev_cruise_setting
       if but == 1:
         be.type = 'altButton1'
+        self.CC.auto_Steer = not self.CC.auto_Steer
       # TODO: more buttons?
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
@@ -513,22 +514,22 @@ class CarInterface(object):
     if (ret.gasPressed and not self.gas_pressed_prev) or \
        (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
       #print "disabled"
-      events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
+      #events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
       self.CC.do_ACC_resume = False
 
     if ret.gasPressed or (not ret.gasPressed and self.gas_pressed_prev and self.CC.auto_ACC_resume):
-      events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
+      #events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
       self.CC.do_ACC_resume = False
     
     elif not c.enabled and not ret.brakePressed and self.CC.auto_ACC_resume:
       print "do it now"
-      events.append(create_event('pedalPressed', [ET.ENABLE]))
+      #events.append(create_event('pedalPressed', [ET.ENABLE]))
       self.CC.do_ACC_resume = True
 
     # it can happen that car cruise disables while comma system is enabled: need to
     # keep braking if needed or if the speed is very low
     if not self.CC.auto_ACC_resume and self.CP.enableCruise and not ret.cruiseState.enabled and c.actuators.brake <= 0.:
-      # non loud alert if cruise disbales below 25mph as expected (+ a little margin)
+      # non loud alert if cruise di\sbales below 25mph as expected (+ a little margin)
       if ret.vEgo < self.CP.minEnableSpeed + 2.:
         events.append(create_event('speedTooLow', [ET.IMMEDIATE_DISABLE]))
       else:
@@ -537,7 +538,7 @@ class CarInterface(object):
       events.append(create_event('manualRestart', [ET.WARNING]))
 
     cur_time = sec_since_boot()
-    enable_pressed = self.CC.do_ACC_resume
+    enable_pressed = False  #self.CC.do_ACC_resume
 
 
     # handle button presses
