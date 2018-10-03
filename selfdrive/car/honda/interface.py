@@ -512,12 +512,14 @@ class CarInterface(object):
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
 
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
-    if (ret.gasPressed and not self.gas_pressed_prev) or \
+    if ((not self.CS.CP.carFingerprint in HONDA_BOSCH) and ret.gasPressed and not self.gas_pressed_prev) or \
        (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
       
-    if ret.gasPressed:
+    if (not self.CS.CP.carFingerprint in HONDA_BOSCH) and ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
+      #self.last_enable_sent = sec_since_boot() - 0.5
+      #self.last_enable_pressed = self.last_enable_sent + 0.2
       
     # it can happen that car cruise disables while comma system is enabled: need to
     # keep braking if needed or if the speed is very low
@@ -532,7 +534,7 @@ class CarInterface(object):
 
     cur_time = sec_since_boot()
 
-    enable_pressed = False 
+    enable_pressed = False  #self.CC.auto_ACC_resume
 
     # handle button presses
     for b in ret.buttonEvents:
