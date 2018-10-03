@@ -63,12 +63,7 @@ class CarController(object):
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
     self.new_radar_config = False
-    self.auto_ACC_resume = False
-    self.do_ACC_resume = False
     self.auto_Steer = True
-    self.ACC_Disabled_Time = 0.
-    self.ACC_Permitted_Time = 0.
-    self.spam_counter = 0
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -84,16 +79,9 @@ class CarController(object):
     brake, self.braking, self.brake_steady = actuator_hystereses(actuators.brake, self.braking, self.brake_steady, CS.v_ego, CS.CP.carFingerprint)
 
     # *** no output if not enabled ***
-    #if not enabled and CS.pcm_acc_status:
+    if not enabled and CS.pcm_acc_status:
       # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
-      #enabled = True
-      #pcm_cancel_cmd = True
-
-    if enabled:
-      self.auto_ACC_resume = True
-
-    elif not enabled and CS.brake_pressed != 0:
-      self.auto_ACC_resume = False
+      pcm_cancel_cmd = True
 
     # *** rate limit after the enable check ***
     self.brake_last = rate_limit(brake, self.brake_last, -2., 1./100)
@@ -157,22 +145,9 @@ class CarController(object):
     # only issue steering command IF the blinkers are OFF and the driver is NOT applying significant torque in the other direction
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, lkas_active, CS.CP.carFingerprint, idx))
 
-    if self.spam_counter < 60 and not enabled and CS.pcm_acc_status and self.auto_ACC_resume and CS.pedal_gas == 0 and CS.brake_pressed == 0:
-      self.spam_counter += 1
-      if self.spam_counter > 35:
-        print ("Spammed! " + str(pcm_cancel_cmd) + " " + str(pcm_override))
-        if self.spam_counter < 40:
-          can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
-    else:
-      #print ("reset" + str(enabled) + " " + str(self.auto_ACC_resume))
-      self.spam_counter = 0
-
-    pcm_cancel_cmd = False
-
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       #print ("%d %d" % (CS.pedal_gas, CS.brake_pressed))
-      print (str(self.spam_counter) + " " + str(enabled) + " " + str(self.auto_ACC_resume))
       idx = (frame/10) % 4
       can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, idx))
 

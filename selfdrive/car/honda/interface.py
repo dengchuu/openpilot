@@ -136,8 +136,7 @@ class CarInterface(object):
     ret = car.CarParams.new_message()
     ret.carName = "honda"
     ret.carFingerprint = candidate
-    ret.enableGasInterceptor = False
-
+    
     if candidate in HONDA_BOSCH:
       ret.safetyModel = car.CarParams.SafetyModels.hondaBosch
       ret.enableCamera = True
@@ -470,7 +469,10 @@ class CarInterface(object):
         but = self.CS.prev_cruise_setting
       if but == 1:
         be.type = 'altButton1'
-        self.CC.auto_Steer = not self.CC.auto_Steer
+        if be.pressed == False:
+          print("toggle steering")
+          self.CC.auto_Steer = not self.CC.auto_Steer
+          self.CS.steer_not_allowed = not self.CS.steer_not_allowed
       # TODO: more buttons?
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
@@ -515,12 +517,10 @@ class CarInterface(object):
     if ((not self.CS.CP.carFingerprint in HONDA_BOSCH) and ret.gasPressed and not self.gas_pressed_prev) or \
        (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
-      
+
     if (not self.CS.CP.carFingerprint in HONDA_BOSCH) and ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
-      #self.last_enable_sent = sec_since_boot() - 0.5
-      #self.last_enable_pressed = self.last_enable_sent + 0.2
-      
+
     # it can happen that car cruise disables while comma system is enabled: need to
     # keep braking if needed or if the speed is very low
     if self.CP.enableCruise and not ret.cruiseState.enabled and c.actuators.brake <= 0.:
@@ -534,7 +534,7 @@ class CarInterface(object):
 
     cur_time = sec_since_boot()
 
-    enable_pressed = False  #self.CC.auto_ACC_resume
+    enable_pressed = False
 
     # handle button presses
     for b in ret.buttonEvents:
@@ -561,7 +561,7 @@ class CarInterface(object):
         self.last_enable_sent = cur_time
     elif enable_pressed:
       events.append(create_event('buttonEnable', [ET.ENABLE]))
-      
+
     ret.events = events
     ret.canMonoTimes = canMonoTimes
 
