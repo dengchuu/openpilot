@@ -68,6 +68,7 @@ class CarController(object):
     self.auto_Steer = True
     self.ACC_Disabled_Time = 0.
     self.ACC_Permitted_Time = 0.
+    self.spam_counter = 0
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -155,10 +156,14 @@ class CarController(object):
     # only issue steering command IF the blinkers are OFF and the driver is NOT applying significant torque in the other direction
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, lkas_active, CS.CP.carFingerprint, idx))
 
-    if not enabled and self.auto_ACC_resume and CS.pedal_gas == 0 and CS.brake_pressed == 0:
+    if enabled:
+          self.spam_counter = 0
+
+    if self.spam_counter < 30 and not enabled and self.auto_ACC_resume and CS.pedal_gas == 0 and CS.brake_pressed == 0:
+      self.spam_counter += 1
       print ("Spammed!")
       can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
-
+    
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       #print ("%d %d" % (CS.pedal_gas, CS.brake_pressed))
