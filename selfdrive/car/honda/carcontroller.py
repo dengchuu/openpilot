@@ -66,7 +66,7 @@ class CarController(object):
     self.auto_ACC_resume = False
     self.do_ACC_resume = False
     self.auto_Steer = True
-    self.ACC_Disable_Time = 0.
+    self.ACC_Disabled_Time = 0.
     self.ACC_Permitted_Time = 0.
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
@@ -148,24 +148,14 @@ class CarController(object):
     # Send steering command.
     idx = frame % 4
 
-    if (CS.steer_override and (abs(apply_steer) != apply_steer) != (abs(CS.steer_torque_driver) != CS.steer_torque_driver)) or \
-          CS.blinker_on or not self.auto_Steer:
-      #if enabled: 
-      #  print ("%d %d" % (CS.steer_torque_driver, apply_steer))
+    if CS.blinker_on or not self.auto_Steer or (CS.steer_override and \
+        (abs(apply_steer) != apply_steer) != (abs(CS.steer_torque_driver) != CS.steer_torque_driver)):
       apply_steer = 0
 
     # only issue steering command IF the blinkers are OFF and the driver is NOT applying significant torque in the other direction
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, lkas_active, CS.CP.carFingerprint, idx))
 
-    #pcm_cancel_cmd = False
-
-    if enabled and self.ACC_Disable_Time > 0.:
-      self.do_ACC_resume = False
-      self.ACC_Disable_Time = 0.
-      self.ACC_Disable_Time = 0.
-      print ("ACC_Disable cleared")
-
-    if not enabled and self.do_ACC_resume and self.auto_ACC_resume and CS.pedal_gas == 0 and CS.brake_pressed == 0:
+    if not enabled and self.auto_ACC_resume and CS.pedal_gas == 0 and CS.brake_pressed == 0:
       print ("Spammed!")
       can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
 
