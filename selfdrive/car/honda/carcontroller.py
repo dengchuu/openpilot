@@ -102,13 +102,15 @@ class CarController(object):
 
     # For lateral control-only, send chimes as a beep since we don't send 0x1fa
     if CS.CP.radarOffCan:
-      snd_beep = snd_beep if snd_beep is not 0 else snd_chime
+      snd_beep = not CS.steer_override and (snd_beep if snd_beep is not 0 else snd_chime)
 
     #print chime, alert_id, hud_alert
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
 
     hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), 1, hud_car,
-                  0xc1, hud_lanes, int(snd_beep), snd_chime, fcw_display, acc_alert, steer_required)
+                  0xc1, self.auto_Steer and not CS.steer_override and hud_lanes, int(snd_beep), 
+                  self.auto_Steer and snd_chime and not (CS.steer_override), self.auto_Steer and not (CS.steer_override) and fcw_display, self.auto_Steer and not CS.steer_override and acc_alert, 
+                  self.auto_Steer and not CS.steer_override and steer_required)
 
     if not all(isinstance(x, int) and 0 <= x < 256 for x in hud):
       hud = HUDData(0xc6, 255, 64, 0xc0, 209, 0x40, 0, 0, 0, 0)

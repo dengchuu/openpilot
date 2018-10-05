@@ -471,8 +471,7 @@ class CarInterface(object):
         be.type = 'altButton1'
         if be.pressed == False:
           print("toggle steering")
-          self.CC.auto_Steer = not self.CC.auto_Steer
-          self.CS.steer_not_allowed = not self.CS.steer_not_allowed
+          self.CC.auto_Steer = not self.CC.auto_Steer 
       # TODO: more buttons?
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
