@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import numpy as np
+import json
 from cereal import car, log
 from common.numpy_fast import clip, interp
 from common.realtime import sec_since_boot
@@ -410,7 +411,7 @@ class CarInterface(object):
     ret.gearShifter = self.CS.gear_shifter
 
     ret.steeringTorque = self.CS.steer_torque_driver
-    ret.steeringPressed = self.CS.steer_override
+    ret.steeringPressed = self.CS.steer_override or not self.CC.auto_Steer
 
     # cruise state
     ret.cruiseState.enabled = self.CS.pcm_acc_status != 0
@@ -578,7 +579,7 @@ class CarInterface(object):
       hud_v_cruise = c.hudControl.setSpeed * CV.MS_TO_KPH
     else:
       hud_v_cruise = 255
-
+    
     hud_alert = {
       "none": AH.NONE,
       "fcw": AH.FCW,
