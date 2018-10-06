@@ -64,7 +64,8 @@ class CarController(object):
     self.packer = CANPacker(dbc_name)
     self.new_radar_config = False
     self.auto_Steer = True
-
+    self.stock_lane_adjust = 1.
+    
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
              radar_error, hud_v_cruise, hud_show_lanes, hud_show_car, \
@@ -135,17 +136,19 @@ class CarController(object):
     # any other cp.vl[0x18F]['STEER_STATUS'] is common and can happen during user override. sending 0 torque to avoid EPS sending error 5
     lkas_active = enabled and not CS.steer_not_allowed and self.auto_Steer
 
-    STOCK_LANE_INFLUENCE = 3.
-    stock_lane_adjust = 1.
-    if lkas_active and (CS.lane1 != 0 or CS.lane2 != 0):
+    if CS.lane1 != 0 or CS.lane2 != 0:
       if (abs(actuators.steer) != actuators.steer) == (abs(CS.lane1) != CS.lane1):
         # OP agrees with stock lane orientation
-        stock_lane_adjust = min(STOCK_LANE_INFLUENCE, abs(CS.lane1)) / STOCK_LANE_INFLUENCE
+        STOCK_LANE_FACTOR = 10.
+        self.stock_lane_adjust = min(STOCK_LANE_FACTOR, abs(CS.lane1)) / STOCK_LANE_FACTOR
       else:
         # OP disagrees with stock lane orientation
-        stock_lane_adjust = (STOCK_LANE_INFLUENCE - min(STOCK_LANE_INFLUENCE, abs(CS.lane1))) / STOCK_LANE_INFLUENCE
+        STOCK_LANE_FACTOR = 5.
+        self.stock_lane_adjust = (STOCK_LANE_FACTOR - min(STOCK_LANE_FACTOR, abs(CS.lane1))) / STOCK_LANE_FACTOR
+    else:
+      self.stock_lane_adjust = 0.3
 
-    apply_steer = int(clip(-actuators.steer * STEER_MAX * stock_lane_adjust, -STEER_MAX, STEER_MAX))
+    apply_steer = int(clip(-actuators.steer * STEER_MAX * self.stock_lane_adjust, -STEER_MAX, STEER_MAX))
 
     # Send CAN commands.
     can_sends = []
@@ -154,7 +157,7 @@ class CarController(object):
     idx = frame % 4
 
     if (frame % 30) == 0:
-      print ("%d %d %d %d" % (CS.lane1, CS.lane2, apply_steer, 100 * stock_lane_adjust))
+      print ("%d %d %d %d" % (CS.lane1, CS.lane2, apply_steer, 100 * self.stock_lane_adjust))
 
     if CS.blinker_on or not self.auto_Steer or (CS.steer_override and \
         (abs(apply_steer) != apply_steer) != (abs(CS.steer_torque_driver) != CS.steer_torque_driver)):
