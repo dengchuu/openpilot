@@ -140,12 +140,12 @@ class CarController(object):
       STOCK_LANE_FACTOR = 5.
       if (abs(actuators.steer) != actuators.steer) == (abs(CS.lane1) != CS.lane1):
         # OP agrees with stock lane orientation
-        self.stock_lane_adjust = min(1.0, 0.3 + min(STOCK_LANE_FACTOR, abs(CS.lane1)) / STOCK_LANE_FACTOR)
+        self.stock_lane_adjust = min(1.0, 0.333 + min(STOCK_LANE_FACTOR, abs(CS.lane1)) / STOCK_LANE_FACTOR)
       else:
         # OP disagrees with stock lane orientation
-        self.stock_lane_adjust = max(0., -0.6 + ((STOCK_LANE_FACTOR - min(STOCK_LANE_FACTOR, abs(CS.lane1))) / STOCK_LANE_FACTOR))
+        self.stock_lane_adjust = max(0., -0.667 + ((STOCK_LANE_FACTOR - min(STOCK_LANE_FACTOR, abs(CS.lane1))) / STOCK_LANE_FACTOR))
     else:
-      self.stock_lane_adjust = 0.3
+      self.stock_lane_adjust = 0.5
 
     apply_steer = int(clip(-actuators.steer * STEER_MAX * self.stock_lane_adjust, -STEER_MAX, STEER_MAX))
 
