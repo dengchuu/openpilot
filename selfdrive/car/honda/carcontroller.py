@@ -131,10 +131,21 @@ class CarController(object):
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_gas = clip(actuators.gas, 0., 1.)
     apply_brake = int(clip(self.brake_last * BRAKE_MAX, 0, BRAKE_MAX - 1))
-    apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))
 
     # any other cp.vl[0x18F]['STEER_STATUS'] is common and can happen during user override. sending 0 torque to avoid EPS sending error 5
     lkas_active = enabled and not CS.steer_not_allowed and self.auto_Steer
+
+    STOCK_LANE_INFLUENCE = 3.
+    stock_lane_adjust = 1.
+    if lkas_active and (CS.lane1 != 0 or CS.lane2 != 0):
+      if (abs(actuators.steer) != actuators.steer) == (abs(CS.lane1) != CS.lane1):
+        # OP agrees with stock lane orientation
+        stock_lane_adjust = min(STOCK_LANE_INFLUENCE, abs(CS.lane1)) / STOCK_LANE_INFLUENCE
+      else:
+        # OP disagrees with stock lane orientation
+        stock_lane_adjust = (STOCK_LANE_INFLUENCE - min(STOCK_LANE_INFLUENCE, abs(CS.lane1))) / STOCK_LANE_INFLUENCE
+
+    apply_steer = int(clip(-actuators.steer * STEER_MAX * stock_lane_adjust, -STEER_MAX, STEER_MAX))
 
     # Send CAN commands.
     can_sends = []
@@ -142,12 +153,15 @@ class CarController(object):
     # Send steering command.
     idx = frame % 4
 
+    if (frame % 30) == 0:
+      print ("%d %d %d %d" % (CS.lane1, CS.lane2, apply_steer, 100 * stock_lane_adjust))
+
     if CS.blinker_on or not self.auto_Steer or (CS.steer_override and \
         (abs(apply_steer) != apply_steer) != (abs(CS.steer_torque_driver) != CS.steer_torque_driver)):
       apply_steer = 0
 
-    can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, lkas_active, CS.CP.carFingerprint, idx))
-
+    can_sends.append(hondacan.create_steering_control(self.packer, int(apply_steer), lkas_active, CS.CP.carFingerprint, idx))
+    
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       #print ("%d %d" % (CS.pedal_gas, CS.brake_pressed))
@@ -157,7 +171,7 @@ class CarController(object):
     if CS.CP.radarOffCan:
       # If using stock ACC, spam cancel command to kill gas when OP disengages.
       if pcm_cancel_cmd:
-        print ("cancelled")
+        #print ("cancelled")
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx))
       elif CS.stopped:
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))

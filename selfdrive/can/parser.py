@@ -73,6 +73,7 @@ class CANParser(object):
 
     self.can_valid = self.p_can_valid[0]
 
+    #print self.vl
     # print can_values_len
     ret = set()
     for i in xrange(can_values_len):
