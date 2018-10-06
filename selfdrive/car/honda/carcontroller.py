@@ -65,7 +65,7 @@ class CarController(object):
     self.new_radar_config = False
     self.auto_Steer = True
     self.stock_lane_adjust = 1.
-    
+
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
              radar_error, hud_v_cruise, hud_show_lanes, hud_show_car, \
