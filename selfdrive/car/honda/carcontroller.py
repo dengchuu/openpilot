@@ -137,14 +137,13 @@ class CarController(object):
     lkas_active = enabled and not CS.steer_not_allowed and self.auto_Steer
 
     if CS.lane1 != 0 or CS.lane2 != 0:
+      STOCK_LANE_FACTOR = 5.
       if (abs(actuators.steer) != actuators.steer) == (abs(CS.lane1) != CS.lane1):
         # OP agrees with stock lane orientation
-        STOCK_LANE_FACTOR = 10.
-        self.stock_lane_adjust = min(STOCK_LANE_FACTOR, abs(CS.lane1)) / STOCK_LANE_FACTOR
+        self.stock_lane_adjust = min(1.0, 0.3 + min(STOCK_LANE_FACTOR, abs(CS.lane1)) / STOCK_LANE_FACTOR)
       else:
         # OP disagrees with stock lane orientation
-        STOCK_LANE_FACTOR = 5.
-        self.stock_lane_adjust = (STOCK_LANE_FACTOR - min(STOCK_LANE_FACTOR, abs(CS.lane1))) / STOCK_LANE_FACTOR
+        self.stock_lane_adjust = max(0., -0.6 + ((STOCK_LANE_FACTOR - min(STOCK_LANE_FACTOR, abs(CS.lane1))) / STOCK_LANE_FACTOR))
     else:
       self.stock_lane_adjust = 0.3
 
