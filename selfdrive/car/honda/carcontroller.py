@@ -109,9 +109,9 @@ class CarController(object):
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
 
     hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), 1, hud_car, 0xc1, 
-                  self.auto_Steer and not CS.steer_override and hud_lanes, int(snd_beep), 
+                  hud_lanes, int(snd_beep), 
                   self.auto_Steer and not CS.steer_override and snd_chime, 
-                  self.auto_Steer and not CS.steer_override and fcw_display, 
+                  fcw_display, 
                   self.auto_Steer and not CS.steer_override and acc_alert, 
                   self.auto_Steer and not CS.steer_override and steer_required)
 
@@ -136,16 +136,17 @@ class CarController(object):
     # any other cp.vl[0x18F]['STEER_STATUS'] is common and can happen during user override. sending 0 torque to avoid EPS sending error 5
     lkas_active = enabled and not CS.steer_not_allowed and self.auto_Steer
 
+    OP_STEER_AT_STOCK_CENTER = 0.333
     if CS.lane1 != 0 or CS.lane2 != 0:
-      STOCK_LANE_FACTOR = 5.
+      STOCK_FILTER_WIDTH = 15.
       if (abs(actuators.steer) != actuators.steer) == (abs(CS.lane1) != CS.lane1):
         # OP agrees with stock lane orientation
-        self.stock_lane_adjust = min(1.0, 0.333 + min(STOCK_LANE_FACTOR, abs(CS.lane1)) / STOCK_LANE_FACTOR)
+        self.stock_lane_adjust = min(1.0, OP_STEER_AT_STOCK_CENTER + min(STOCK_FILTER_WIDTH, abs(CS.lane1)) / STOCK_FILTER_WIDTH)
       else:
         # OP disagrees with stock lane orientation
-        self.stock_lane_adjust = max(0., -0.667 + ((STOCK_LANE_FACTOR - min(STOCK_LANE_FACTOR, abs(CS.lane1))) / STOCK_LANE_FACTOR))
+        self.stock_lane_adjust = max(0., OP_STEER_AT_STOCK_CENTER - 1. + ((STOCK_FILTER_WIDTH - min(STOCK_FILTER_WIDTH, abs(CS.lane1))) / STOCK_FILTER_WIDTH))
     else:
-      self.stock_lane_adjust = 0.5
+      self.stock_lane_adjust = OP_STEER_AT_STOCK_CENTER
 
     apply_steer = int(clip(-actuators.steer * STEER_MAX * self.stock_lane_adjust, -STEER_MAX, STEER_MAX))
 
