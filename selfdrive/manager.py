@@ -85,10 +85,10 @@ from selfdrive.loggerd.config import ROOT
 managed_processes = {
   "thermald": "selfdrive.thermald",
   "uploader": "selfdrive.loggerd.uploader",
-  "controlsd": "selfdrive.controls.controlsd",
+  #"controlsd": "selfdrive.controls.controlsd",
   "radard": "selfdrive.controls.radard",
   "ubloxd": "selfdrive.locationd.ubloxd",
-  "loggerd": ("selfdrive/loggerd", ["./loggerd"]),
+  #"loggerd": ("selfdrive/loggerd", ["./loggerd"]),
   "logmessaged": "selfdrive.logmessaged",
   "tombstoned": "selfdrive.tombstoned",
   "logcatd": ("selfdrive/logcatd", ["./logcatd"]),
@@ -101,7 +101,7 @@ managed_processes = {
   "sensord": ("selfdrive/sensord", ["./sensord"]),
   "gpsd": ("selfdrive/sensord", ["./gpsd"]),
   "orbd": ("selfdrive/orbd", ["./orbd_wrapper.sh"]),
-  "updated": "selfdrive.updated",
+  #"updated": "selfdrive.updated",
 }
 android_packages = ("ai.comma.plus.offroad", "ai.comma.plus.frame")
 
@@ -123,12 +123,12 @@ persistent_processes = [
   'uploader',
   'ui',
   'gpsd',
-  'updated',
+  #'updated',
 ]
 
 car_started_processes = [
-  'controlsd',
-  'loggerd',
+  #'controlsd',
+  #'loggerd',
   'sensord',
   'radard',
   'calibrationd',

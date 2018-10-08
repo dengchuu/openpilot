@@ -173,7 +173,7 @@ class CarController(object):
 
     steerData = ('steerData,testName=secondRun OP_apply_steer=%d,angle_steers=%d,angle_steers_rate=%d,avg_apply_steer=%d,frame=%d,lane1=%d,lane2=%d,lane3=%d,sample_count=%d,sent_apply_steer=%d,steer_torque_driver=%d,stock_lane_adjust=%d %d\n' \
               % (orig_apply_steer, CS.angle_steers, CS.angle_steers_rate, self.avg_apply_steer, frame, CS.lane1, CS.lane2, CS.lane3, self.sample_count, apply_steer, CS.steer_torque_driver, self.stock_lane_adjust, int(time.time() * 1000000000)))
-    self.steerpub.send(steerData)
+    steerpub.send(steerData)
     print (steerData)
 
     can_sends.append(hondacan.create_steering_control(self.packer, int(apply_steer), lkas_active, CS.CP.carFingerprint, idx))
