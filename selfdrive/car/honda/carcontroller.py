@@ -164,7 +164,7 @@ class CarController(object):
         self.sample_count = max(0, self.sample_count - 1)
         self.stock_lane_adjust = 1.
 
-      apply_steer = int(clip(-actuators.steer * STEER_MAX * self.stock_lane_adjust, -STEER_MAX, STEER_MAX))
+      apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX * self.stock_lane_adjust, STEER_MAX * self.stock_lane_adjust))
       self.avg_apply_steer = ((self.sample_count * self.avg_apply_steer) + apply_steer) / (self.sample_count + 1)
       
       if not stock_online:
