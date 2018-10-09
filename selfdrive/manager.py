@@ -88,7 +88,7 @@ managed_processes = {
   #"controlsd": "selfdrive.controls.controlsd",
   "radard": "selfdrive.controls.radard",
   "ubloxd": "selfdrive.locationd.ubloxd",
-  #"loggerd": ("selfdrive/loggerd", ["./loggerd"]),
+  "loggerd": ("selfdrive/loggerd", ["./loggerd"]),
   "logmessaged": "selfdrive.logmessaged",
   "tombstoned": "selfdrive.tombstoned",
   "logcatd": ("selfdrive/logcatd", ["./logcatd"]),
@@ -128,7 +128,7 @@ persistent_processes = [
 
 car_started_processes = [
   #'controlsd',
-  #'loggerd',
+  'loggerd',
   'sensord',
   'radard',
   'calibrationd',

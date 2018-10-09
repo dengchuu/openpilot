@@ -70,8 +70,8 @@ class CarController(object):
     self.context = zmq.Context()
     self.steerpub = self.context.socket(zmq.PUB)
     self.steerpub.bind("tcp://*:8593")
-    self.avg_apply_steer = 0
-    self.sample_count = 0
+    self.avg_steer_limit = 1.
+    self.sample_count = 1.
     self.steerData = ""
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
@@ -147,12 +147,12 @@ class CarController(object):
     orig_apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))      
 
     if False == False:
-      MAX_STEERING_SAMPLES = 300
-      OP_STEER_AT_STOCK_CENTER = 0.333
+      MAX_STEERING_SAMPLES = 200.
+      OP_STEER_AT_STOCK_CENTER = 0.2
       if CS.lane1 != 0 or CS.lane2 != 0:
         stock_online = True
-        self.sample_count = min(MAX_STEERING_SAMPLES, self.sample_count + 1)
-        STOCK_FILTER_WIDTH = 25.
+        self.sample_count = min(MAX_STEERING_SAMPLES, self.sample_count + 1.)
+        STOCK_FILTER_WIDTH = 15.
         if (abs(actuators.steer) != actuators.steer) == (abs(CS.lane1) != CS.lane1):
           # OP agrees with stock lane orientation
           self.stock_lane_adjust = min(1.0, OP_STEER_AT_STOCK_CENTER + min(STOCK_FILTER_WIDTH, abs(CS.lane1)) / STOCK_FILTER_WIDTH)
@@ -161,14 +161,16 @@ class CarController(object):
           self.stock_lane_adjust = max(0., OP_STEER_AT_STOCK_CENTER - 1. + ((STOCK_FILTER_WIDTH - min(STOCK_FILTER_WIDTH, abs(CS.lane1))) / STOCK_FILTER_WIDTH))
       else:
         stock_online = False
-        self.sample_count = max(0, self.sample_count - 1)
+        self.sample_count = max(0., self.sample_count - 1.)
         self.stock_lane_adjust = 1.
 
-      apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX * self.stock_lane_adjust, STEER_MAX * self.stock_lane_adjust))
-      self.avg_apply_steer = ((self.sample_count * self.avg_apply_steer) + apply_steer) / (self.sample_count + 1)
+      self.avg_steer_limit = ((self.sample_count * self.avg_steer_limit) + self.stock_lane_adjust) / (self.sample_count + 1.)
       
       if not stock_online:
-        apply_steer = self.avg_apply_steer
+        self.stock_lane_adjust = self.avg_steer_limit
+      
+      apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX * self.stock_lane_adjust, STEER_MAX * self.stock_lane_adjust))
+
 
       if CS.blinker_on or not self.auto_Steer or (CS.steer_override and \
           (abs(apply_steer) != apply_steer) != (abs(CS.steer_torque_driver) != CS.steer_torque_driver)):
@@ -184,8 +186,8 @@ class CarController(object):
     idx = frame % 4
 
     if (frame % 5) == 0:
-      self.steerData += ('steerData,testName=secondRun OP_apply_steer=%d,angle_steers=%d,angle_steers_rate=%d,avg_apply_steer=%d,frame=%d,lane1=%d,lane2=%d,lane3=%d,sample_count=%d,sent_apply_steer=%d,steer_torque_driver=%d,stock_lane_adjust=%d %d\n' \
-              % (orig_apply_steer, CS.angle_steers, CS.angle_steers_rate, self.avg_apply_steer, frame, CS.lane1, CS.lane2, CS.lane3, self.sample_count, apply_steer, CS.steer_torque_driver, self.stock_lane_adjust * 100, int(time.time() * 1000000000)))
+      self.steerData += ('steerData,testName=secondRun OP_apply_steer=%d,angle_steers=%d,angle_steers_rate=%d,avg_steer_limit=%d,frame=%d,lane1=%d,lane2=%d,lane3=%d,sample_count=%d,sent_apply_steer=%d,steer_torque_driver=%d,stock_lane_adjust=%d %d\n' \
+              % (orig_apply_steer, CS.angle_steers, CS.angle_steers_rate, self.avg_steer_limit, frame, CS.lane1, CS.lane2, CS.lane3, self.sample_count, apply_steer, CS.steer_torque_driver, self.stock_lane_adjust * 100, int(time.time() * 1000000000)))
     elif ((frame + 2) % 40) == 0:
       self.steerpub.send(self.steerData)
       self.steerData = ""
