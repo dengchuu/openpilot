@@ -147,11 +147,12 @@ class CarController(object):
     orig_apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))      
 
     if False == False:
+      MAX_STEERING_SAMPLES = 300
       OP_STEER_AT_STOCK_CENTER = 0.333
       if CS.lane1 != 0 or CS.lane2 != 0:
         stock_online = True
-        self.sample_count = min(200, self.sample_count + 1)
-        STOCK_FILTER_WIDTH = 15.
+        self.sample_count = min(MAX_STEERING_SAMPLES, self.sample_count + 1)
+        STOCK_FILTER_WIDTH = 25.
         if (abs(actuators.steer) != actuators.steer) == (abs(CS.lane1) != CS.lane1):
           # OP agrees with stock lane orientation
           self.stock_lane_adjust = min(1.0, OP_STEER_AT_STOCK_CENTER + min(STOCK_FILTER_WIDTH, abs(CS.lane1)) / STOCK_FILTER_WIDTH)
