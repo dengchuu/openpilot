@@ -72,6 +72,7 @@ class CarController(object):
     self.steerpub.bind("tcp://*:8593")
     self.avg_apply_steer = 0
     self.sample_count = 0
+    self.steerData = ""
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -143,31 +144,37 @@ class CarController(object):
     # any other cp.vl[0x18F]['STEER_STATUS'] is common and can happen during user override. sending 0 torque to avoid EPS sending error 5
     lkas_active = enabled and not CS.steer_not_allowed and self.auto_Steer
 
-    OP_STEER_AT_STOCK_CENTER = 0.333
-    if CS.lane1 != 0 or CS.lane2 != 0:
-      stock_online = True
-      self.sample_count = min(200, 1 + self.sample_count)
-      STOCK_FILTER_WIDTH = 15.
-      if (abs(actuators.steer) != actuators.steer) == (abs(CS.lane1) != CS.lane1):
-        # OP agrees with stock lane orientation
-        self.stock_lane_adjust = min(1.0, OP_STEER_AT_STOCK_CENTER + min(STOCK_FILTER_WIDTH, abs(CS.lane1)) / STOCK_FILTER_WIDTH)
+    orig_apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))      
+
+    if False == False:
+      OP_STEER_AT_STOCK_CENTER = 0.333
+      if CS.lane1 != 0 or CS.lane2 != 0:
+        stock_online = True
+        self.sample_count = min(200, self.sample_count + 1)
+        STOCK_FILTER_WIDTH = 15.
+        if (abs(actuators.steer) != actuators.steer) == (abs(CS.lane1) != CS.lane1):
+          # OP agrees with stock lane orientation
+          self.stock_lane_adjust = min(1.0, OP_STEER_AT_STOCK_CENTER + min(STOCK_FILTER_WIDTH, abs(CS.lane1)) / STOCK_FILTER_WIDTH)
+        else:
+          # OP disagrees with stock lane orientation
+          self.stock_lane_adjust = max(0., OP_STEER_AT_STOCK_CENTER - 1. + ((STOCK_FILTER_WIDTH - min(STOCK_FILTER_WIDTH, abs(CS.lane1))) / STOCK_FILTER_WIDTH))
       else:
-        # OP disagrees with stock lane orientation
-        self.stock_lane_adjust = max(0., OP_STEER_AT_STOCK_CENTER - 1. + ((STOCK_FILTER_WIDTH - min(STOCK_FILTER_WIDTH, abs(CS.lane1))) / STOCK_FILTER_WIDTH))
+        stock_online = False
+        self.sample_count = max(0, self.sample_count - 1)
+        self.stock_lane_adjust = 1.
+
+      apply_steer = int(clip(-actuators.steer * STEER_MAX * self.stock_lane_adjust, -STEER_MAX, STEER_MAX))
+      self.avg_apply_steer = ((self.sample_count * self.avg_apply_steer) + apply_steer) / (self.sample_count + 1)
+      
+      if not stock_online:
+        apply_steer = self.avg_apply_steer
+
+      if CS.blinker_on or not self.auto_Steer or (CS.steer_override and \
+          (abs(apply_steer) != apply_steer) != (abs(CS.steer_torque_driver) != CS.steer_torque_driver)):
+        apply_steer = 0
+
     else:
-      stock_online = False
-      self.sample_count = max(0, 1 + self.sample_count)
-      self.stock_lane_adjust = 1.
-
-    self.sample_count = max(0, min(200, self.sample_count))
-
-    orig_apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))
-    
-    apply_steer = int(clip(-actuators.steer * STEER_MAX * self.stock_lane_adjust, -STEER_MAX, STEER_MAX))
-    self.avg_apply_steer = ((self.sample_count * self.avg_apply_steer) + apply_steer) / (self.sample_count + 1)
-    
-    if not stock_online:
-      apply_steer = self.avg_apply_steer
+      apply_steer = orig_apply_steer
       
     # Send CAN commands.
     can_sends = []
@@ -175,20 +182,18 @@ class CarController(object):
     # Send steering command.
     idx = frame % 4
 
-    if CS.blinker_on or not self.auto_Steer or (CS.steer_override and \
-        (abs(apply_steer) != apply_steer) != (abs(CS.steer_torque_driver) != CS.steer_torque_driver)):
-      apply_steer = 0
-
-    steerData = ('steerData,testName=secondRun OP_apply_steer=%d,angle_steers=%d,angle_steers_rate=%d,avg_apply_steer=%d,frame=%d,lane1=%d,lane2=%d,lane3=%d,sample_count=%d,sent_apply_steer=%d,steer_torque_driver=%d,stock_lane_adjust=%d %d\n' \
+    if (frame % 5) == 0:
+      self.steerData += ('steerData,testName=secondRun OP_apply_steer=%d,angle_steers=%d,angle_steers_rate=%d,avg_apply_steer=%d,frame=%d,lane1=%d,lane2=%d,lane3=%d,sample_count=%d,sent_apply_steer=%d,steer_torque_driver=%d,stock_lane_adjust=%d %d\n' \
               % (orig_apply_steer, CS.angle_steers, CS.angle_steers_rate, self.avg_apply_steer, frame, CS.lane1, CS.lane2, CS.lane3, self.sample_count, apply_steer, CS.steer_torque_driver, self.stock_lane_adjust * 100, int(time.time() * 1000000000)))
-    self.steerpub.send(steerData)
-    #print (steerData)
+    elif ((frame + 2) % 40) == 0:
+      self.steerpub.send(self.steerData)
+      self.steerData = ""
 
     can_sends.append(hondacan.create_steering_control(self.packer, int(apply_steer), lkas_active, CS.CP.carFingerprint, idx))
-    
+    #print (steerData)
+
     # Send dashboard UI commands.
     if (frame % 10) == 0:
-      #print ("%d %d" % (CS.pedal_gas, CS.brake_pressed))
       idx = (frame/10) % 4
       can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, idx))
 
