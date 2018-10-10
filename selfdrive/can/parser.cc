@@ -254,7 +254,7 @@ class CANParser {
 
         if (can_forward_period_ns > 0) raw_can_values[cmsg.getSrc()][cmsg.getAddress()] = read_u64_be(dat);
 
-        if (cmsg.getSrc() != bus and cmsg.getAddress() != 0x240) {
+        if (cmsg.getSrc() != bus and (cmsg.getAddress() < 0x240 or cmsg.getAddress() > 0x24A)) {
           // DEBUG("skip %d: wrong bus\n", cmsg.getAddress());
           continue;
         }

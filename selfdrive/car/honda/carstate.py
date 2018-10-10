@@ -81,11 +81,31 @@ def get_can_signals(CP):
                 ("EPB_STATE", "EPB_STATUS", 0),
                 ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0),
                 ("CRUISE_SPEED", "ACC_HUD", 0),
-                ("LANE_1", "LANE_POSITION", 2),
-                ("LANE_2", "LANE_POSITION", 1),
-                ("LANE_3", "LANE_POSITION", 1)]
+                ("LANE_1", "LANE_POSITION_1", 2),
+                ("LANE_2", "LANE_POSITION_1", 1),
+                ("LANE_1", "LANE_POSITION_2", 2),
+                ("LANE_2", "LANE_POSITION_2", 1),
+                ("LANE_1", "LANE_POSITION_3", 2),
+                ("LANE_2", "LANE_POSITION_3", 1),
+                ("LANE_1", "LANE_POSITION_4", 2),
+                ("LANE_2", "LANE_POSITION_4", 1),
+                ("LANE_1", "LANE_POSITION_5", 2),
+                ("LANE_2", "LANE_POSITION_5", 1),
+                ("LANE_1", "LANE_POSITION_6", 2),
+                ("LANE_2", "LANE_POSITION_6", 1),
+                ("LANE_1", "LANE_POSITION_7", 2),
+                ("LANE_2", "LANE_POSITION_7", 1),
+                ("LANE_1", "LANE_POSITION_8", 2),
+                ("LANE_2", "LANE_POSITION_8", 1),]
     checks += [("GAS_PEDAL_2", 100),
-                ("LANE_POSITION", 100)]
+                ("LANE_POSITION_1", 100),
+                ("LANE_POSITION_2", 100),
+                ("LANE_POSITION_3", 100),
+                ("LANE_POSITION_4", 100),
+                ("LANE_POSITION_5", 100),
+                ("LANE_POSITION_6", 100),
+                ("LANE_POSITION_7", 100),
+                ("LANE_POSITION_8", 100)]
   else:
     # Nidec signals.
     signals += [("CRUISE_SPEED_PCM", "CRUISE", 0),
@@ -144,7 +164,22 @@ class CarState(object):
     self.brake_switch_prev = 0
     self.brake_switch_ts = 0
     self.zero_lane_counter = 0
-    self.lane1 = 0
+    self.lane11 = 0.
+    self.lane12 = 0.
+    self.lane21 = 0.
+    self.lane22 = 0.
+    self.lane31 = 0.
+    self.lane32 = 0.
+    self.lane41 = 0.
+    self.lane42 = 0.
+    self.lane51 = 0.
+    self.lane52 = 0.
+    self.lane61 = 0.
+    self.lane62 = 0.
+    self.lane71 = 0.
+    self.lane72 = 0.
+    self.lane81 = 0.
+    self.lane82 = 0.
     self.cruise_buttons = 0
     self.cruise_setting = 0
     self.v_cruise_pcm_prev = 0
@@ -244,11 +279,23 @@ class CarState(object):
       self.brake_hold = cp.vl["VSA_STATUS"]['BRAKE_HOLD_ACTIVE']
       self.main_on = cp.vl["SCM_FEEDBACK"]['MAIN_ON']
 
-      temp_lane = float(cp.vl["LANE_POSITION"]["LANE_1"])
-      self.lane2 = cp.vl["LANE_POSITION"]["LANE_2"]
-      self.lane3 = cp.vl["LANE_POSITION"]["LANE_3"]
-      #if temp_lane != 0 or self.lane2 != 0 or self.lane3 != 0 or self.zero_lane_counter >= 100:
-      self.lane1 = temp_lane
+      self.lane11 = float(cp.vl["LANE_POSITION_1"]["LANE_1"])
+      self.lane12 = cp.vl["LANE_POSITION_1"]["LANE_2"]
+      self.lane21 = float(cp.vl["LANE_POSITION_2"]["LANE_1"])
+      self.lane22 = cp.vl["LANE_POSITION_2"]["LANE_2"]
+      self.lane31 = float(cp.vl["LANE_POSITION_3"]["LANE_1"])
+      self.lane32 = cp.vl["LANE_POSITION_3"]["LANE_2"]
+      self.lane41 = float(cp.vl["LANE_POSITION_4"]["LANE_1"])
+      self.lane42 = cp.vl["LANE_POSITION_4"]["LANE_2"]
+      self.lane51 = float(cp.vl["LANE_POSITION_5"]["LANE_1"])
+      self.lane52 = cp.vl["LANE_POSITION_5"]["LANE_2"]
+      self.lane61 = float(cp.vl["LANE_POSITION_6"]["LANE_1"])
+      self.lane62 = cp.vl["LANE_POSITION_6"]["LANE_2"]
+      self.lane71 = float(cp.vl["LANE_POSITION_7"]["LANE_1"])
+      self.lane72 = cp.vl["LANE_POSITION_7"]["LANE_2"]
+      self.lane81 = float(cp.vl["LANE_POSITION_8"]["LANE_1"])
+      self.lane82 = cp.vl["LANE_POSITION_8"]["LANE_2"]
+
       #  self.zero_lane_counter = 0
       #else:  
       #  self.zero_lane_counter += 1

@@ -149,18 +149,38 @@ class CarController(object):
     if False == False:
       MAX_STEERING_SAMPLES = 200.
       OP_STEER_AT_STOCK_CENTER = 0.2
-      if CS.lane1 != 0 or CS.lane2 != 0:
-        stock_online = True
-        self.sample_count = min(MAX_STEERING_SAMPLES, self.sample_count + 1.)
-        STOCK_FILTER_WIDTH = 15.
-        if (abs(actuators.steer) != actuators.steer) == (abs(CS.lane1) != CS.lane1):
-          # OP agrees with stock lane orientation
-          self.stock_lane_adjust = min(1.0, OP_STEER_AT_STOCK_CENTER + min(STOCK_FILTER_WIDTH, abs(CS.lane1)) / STOCK_FILTER_WIDTH)
-        else:
-          # OP disagrees with stock lane orientation
-          self.stock_lane_adjust = max(0., OP_STEER_AT_STOCK_CENTER - 1. + ((STOCK_FILTER_WIDTH - min(STOCK_FILTER_WIDTH, abs(CS.lane1))) / STOCK_FILTER_WIDTH))
+
+      stock_lane_center = 0.
+      stock_online = True
+      if CS.lane12 != 0 and CS.lane32 != 0:
+        if (abs(CS.lane11) != CS.lane11) == (abs(CS.lane31) != CS.lane31):
+          if abs(CS.lane11) < abs(CS.lane31):
+            stock_lane_center = CS.lane11
+          else:
+            stock_lane_center = CS.lane31
+        elif CS.lane52 != 0 and CS.lane72 != 0:
+          stock_lane_center = (CS.lane11 + CS.lane31) / 2.
+        elif CS.lane52 != 0:
+          stock_lane_center = CS.lane11
+        else: 
+          stock_lane_center = CS.lane31
+      elif CS.lane12 != 0:
+        stock_lane_center = CS.lane11
+      elif CS.lane32 != 0:
+        stock_lane_center = CS.lane31
       else:
         stock_online = False
+      
+      if stock_online:
+        self.sample_count = min(MAX_STEERING_SAMPLES, self.sample_count + 1.)
+        STOCK_FILTER_WIDTH = 20.
+        if (abs(actuators.steer) != actuators.steer) == (abs(stock_lane_center) != stock_lane_center):
+          # OP agrees with stock lane orientation
+          self.stock_lane_adjust = min(1.0, OP_STEER_AT_STOCK_CENTER + min(STOCK_FILTER_WIDTH, abs(stock_lane_center)) / STOCK_FILTER_WIDTH)
+        else:
+          # OP disagrees with stock lane orientation
+          self.stock_lane_adjust = max(0.15, OP_STEER_AT_STOCK_CENTER - 1. + ((STOCK_FILTER_WIDTH - min(STOCK_FILTER_WIDTH, abs(stock_lane_center))) / STOCK_FILTER_WIDTH))
+      else:
         self.sample_count = max(0., self.sample_count - 1.)
         self.stock_lane_adjust = 1.
 
@@ -169,12 +189,13 @@ class CarController(object):
       if not stock_online:
         self.stock_lane_adjust = self.avg_steer_limit
       
+      if CS.blinker_on or not self.auto_Steer or (CS.steer_override and \
+          (abs(actuators.steer) != actuators.steer) == (abs(CS.steer_torque_driver) != CS.steer_torque_driver)):
+        #apply_steer = 0
+        self.stock_lane_adjust = max(0., self.stock_lane_adjust)
+
       apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX * self.stock_lane_adjust, STEER_MAX * self.stock_lane_adjust))
 
-
-      if CS.blinker_on or not self.auto_Steer or (CS.steer_override and \
-          (abs(apply_steer) != apply_steer) != (abs(CS.steer_torque_driver) != CS.steer_torque_driver)):
-        apply_steer = 0
 
     else:
       apply_steer = orig_apply_steer
@@ -186,8 +207,8 @@ class CarController(object):
     idx = frame % 4
 
     if (frame % 5) == 0:
-      self.steerData += ('steerData,testName=secondRun OP_apply_steer=%d,angle_steers=%d,angle_steers_rate=%d,avg_steer_limit=%d,frame=%d,lane1=%d,lane2=%d,lane3=%d,sample_count=%d,sent_apply_steer=%d,steer_torque_driver=%d,stock_lane_adjust=%d %d\n' \
-              % (orig_apply_steer, CS.angle_steers, CS.angle_steers_rate, self.avg_steer_limit, frame, CS.lane1, CS.lane2, CS.lane3, self.sample_count, apply_steer, CS.steer_torque_driver, self.stock_lane_adjust * 100, int(time.time() * 1000000000)))
+      self.steerData += ('steerData,testName=secondRun OP_apply_steer=%d,angle_steers=%d,angle_steers_rate=%d,avg_steer_limit=%d,frame=%d,avg_lane_center=%d,lane11=%d,lane12=%d,lane21=%d,lane22=%d,lane31=%d,lane32=%d,lane41=%d,lane42=%d,lane51=%d,lane52=%d,lane61=%d,lane62=%d,lane71=%d,lane72=%d,lane81=%d,lane82=%d,sample_count=%d,sent_apply_steer=%d,steer_torque_driver=%d,stock_lane_adjust=%d %d\n' \
+              % (orig_apply_steer, CS.angle_steers, CS.angle_steers_rate, self.avg_steer_limit, frame, stock_lane_center, CS.lane11, CS.lane12, CS.lane21, CS.lane22, CS.lane31, CS.lane32, CS.lane41, CS.lane42, CS.lane51, CS.lane52, CS.lane61, CS.lane62, CS.lane71, CS.lane72, CS.lane81, CS.lane82, self.sample_count, apply_steer, CS.steer_torque_driver, self.stock_lane_adjust * 100, int(time.time() * 1000000000)))
     elif ((frame + 2) % 40) == 0:
       self.steerpub.send(self.steerData)
       self.steerData = ""
