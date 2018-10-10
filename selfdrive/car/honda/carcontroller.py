@@ -179,7 +179,7 @@ class CarController(object):
           self.stock_lane_adjust = min(1.0, OP_STEER_AT_STOCK_CENTER + min(STOCK_FILTER_WIDTH, abs(stock_lane_center)) / STOCK_FILTER_WIDTH)
         else:
           # OP disagrees with stock lane orientation
-          self.stock_lane_adjust = max(0.15, OP_STEER_AT_STOCK_CENTER - 1. + ((STOCK_FILTER_WIDTH - min(STOCK_FILTER_WIDTH, abs(stock_lane_center))) / STOCK_FILTER_WIDTH))
+          self.stock_lane_adjust = max(0.2, OP_STEER_AT_STOCK_CENTER - 1. + ((STOCK_FILTER_WIDTH - min(STOCK_FILTER_WIDTH, abs(stock_lane_center))) / STOCK_FILTER_WIDTH))
       else:
         self.sample_count = max(0., self.sample_count - 1.)
         self.stock_lane_adjust = 1.
@@ -191,8 +191,7 @@ class CarController(object):
       
       if CS.blinker_on or not self.auto_Steer or (CS.steer_override and \
           (abs(actuators.steer) != actuators.steer) == (abs(CS.steer_torque_driver) != CS.steer_torque_driver)):
-        #apply_steer = 0
-        self.stock_lane_adjust = max(0., self.stock_lane_adjust)
+        apply_steer = 0
 
       apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX * self.stock_lane_adjust, STEER_MAX * self.stock_lane_adjust))
 
