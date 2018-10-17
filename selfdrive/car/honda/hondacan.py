@@ -66,8 +66,9 @@ def create_gas_command(packer, gas_amount, idx):
 def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, idx):
   """Creates a CAN message for the Honda DBC STEERING_CONTROL."""
   values = {
-    "STEER_TORQUE": apply_steer if lkas_active else 0,
-    "STEER_TORQUE_REQUEST": lkas_active,
+    "STEER_TORQUE": apply_steer,
+    "STEER_TORQUE_REQUEST": lkas_active
+    #"GERNBY1": 0
   }
   # Set bus 2 for accord and new crv.
   bus = 2 if car_fingerprint in HONDA_BOSCH else 0
@@ -96,11 +97,17 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
     commands.append(packer.make_can_msg("ACC_HUD", 0, acc_hud_values, idx))
 
   lkas_hud_values = {
-    'SET_ME_X41': 0x41,
-    'SET_ME_X48': 0x48,
-    'STEERING_REQUIRED': hud.steer_required,
+    #'SET_ME_X41': 0x41,
+    #'SET_ME_X48': 0x48,
+    #'GERNBY1': hud.gernby1,
+    #'GERNBY2': hud.gernby2,
+    #'GERNBY3': 0x41, #hud.gernby3,
+    #'GERNBY4': 0x48, #hud.gernby4,
+    #'LKAS_OFF': hud.LKAS_OFF,
+    #'STEERING_REQUIRED': hud.steer_required,
     'SOLID_LANES': hud.lanes,
-    'BEEP': hud.beep,
+    'DASHED_LANES': hud.dashed_lanes,
+    #'BEEP': hud.beep,
   }
   commands.append(packer.make_can_msg('LKAS_HUD', bus, lkas_hud_values, idx))
 
@@ -111,6 +118,15 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
       'ACC_ALERTS': hud.acc_alert,
       'LEAD_SPEED': 0x1fe,  # What are these magic values
       'LEAD_STATE': 0x7,
+      'LEAD_DISTANCE': 0x1e, 
+    }
+    commands.append(packer.make_can_msg('RADAR_HUD', 0, radar_hud_values, idx))
+  else:  #if car_fingerprint in (CAR.ACCORD):
+    radar_hud_values = {
+      'GERNBY1': hud.r_hud_speed,
+      'GERNBY3': 1,
+      'GERNBY5': 0,
+      'ACC_ALERTS': 0,
       'LEAD_DISTANCE': 0x1e,
     }
     commands.append(packer.make_can_msg('RADAR_HUD', 0, radar_hud_values, idx))

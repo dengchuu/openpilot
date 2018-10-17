@@ -357,7 +357,7 @@ class CarInterface(object):
     ret.longPidDeadzoneV = [0.]
 
     ret.stoppingControl = True
-    ret.steerLimitAlert = True
+    ret.steerLimitAlert = False
     ret.startAccel = 0.5
 
     ret.steerActuatorDelay = 0.1
@@ -411,7 +411,7 @@ class CarInterface(object):
     ret.gearShifter = self.CS.gear_shifter
 
     ret.steeringTorque = self.CS.steer_torque_driver
-    ret.steeringPressed = self.CS.steer_override or not self.CC.auto_Steer or not self.CC.stock_lane_adjust == 1.
+    ret.steeringPressed = self.CS.steer_override #or not self.CC.auto_Steer or not self.CC.stock_lane_limit == 1.
 
     # cruise state
     ret.cruiseState.enabled = self.CS.pcm_acc_status != 0
@@ -443,6 +443,7 @@ class CarInterface(object):
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons:
       be = car.CarState.ButtonEvent.new_message()
       be.type = 'unknown'
+      #but = self.CS.cruise_buttons
       if self.CS.cruise_buttons != 0:
         be.pressed = True
         but = self.CS.cruise_buttons
@@ -457,22 +458,27 @@ class CarInterface(object):
         be.type = 'cancel'
       elif but == CruiseButtons.MAIN:
         be.type = 'altButton3'
+      elif but == 1:
+        be.type = 'altButton1'
+        #print("toggle steering")
+        #self.CC.auto_Steer = not self.CC.auto_Steer 
       buttonEvents.append(be)
 
     if self.CS.cruise_setting != self.CS.prev_cruise_setting:
       be = car.CarState.ButtonEvent.new_message()
       be.type = 'unknown'
+      #but = self.CS.cruise_setting
       if self.CS.cruise_setting != 0:
         be.pressed = True
         but = self.CS.cruise_setting
       else:
         be.pressed = False
         but = self.CS.prev_cruise_setting
-      if but == 1:
-        be.type = 'altButton1'
-        if be.pressed == False:
-          print("toggle steering")
-          self.CC.auto_Steer = not self.CC.auto_Steer 
+      #if but == 1:
+      #  be.type = 'altButton1'
+      #  if be.pressed == False:
+      #    print("toggle steering")
+          #self.CC.auto_Steer = not self.CC.auto_Steer 
       # TODO: more buttons?
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents

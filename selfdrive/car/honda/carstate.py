@@ -81,31 +81,80 @@ def get_can_signals(CP):
                 ("EPB_STATE", "EPB_STATUS", 0),
                 ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0),
                 ("CRUISE_SPEED", "ACC_HUD", 0),
-                ("LANE_1", "LANE_POSITION_1", 2),
-                ("LANE_2", "LANE_POSITION_1", 1),
-                ("LANE_1", "LANE_POSITION_2", 2),
-                ("LANE_2", "LANE_POSITION_2", 1),
-                ("LANE_1", "LANE_POSITION_3", 2),
-                ("LANE_2", "LANE_POSITION_3", 1),
-                ("LANE_1", "LANE_POSITION_4", 2),
-                ("LANE_2", "LANE_POSITION_4", 1),
-                ("LANE_1", "LANE_POSITION_5", 2),
-                ("LANE_2", "LANE_POSITION_5", 1),
-                ("LANE_1", "LANE_POSITION_6", 2),
-                ("LANE_2", "LANE_POSITION_6", 1),
-                ("LANE_1", "LANE_POSITION_7", 2),
-                ("LANE_2", "LANE_POSITION_7", 1),
-                ("LANE_1", "LANE_POSITION_8", 2),
-                ("LANE_2", "LANE_POSITION_8", 1),]
+                ("PARM_1", "CUR_LANE_LEFT_1", 2),
+                ("PARM_2", "CUR_LANE_LEFT_1", 1),
+                ("PARM_3", "CUR_LANE_LEFT_1", 1),
+                ("PARM_4", "CUR_LANE_LEFT_1", 2),
+                ("PARM_5", "CUR_LANE_LEFT_2", 1),
+                ("PARM_6", "CUR_LANE_LEFT_2", 1),
+                ("PARM_7", "CUR_LANE_LEFT_2", 1),
+                ("PARM_1", "CUR_LANE_RIGHT_1", 2),
+                ("PARM_2", "CUR_LANE_RIGHT_1", 1),
+                ("PARM_3", "CUR_LANE_RIGHT_1", 1),
+                ("PARM_4", "CUR_LANE_RIGHT_1", 2),
+                ("PARM_5", "CUR_LANE_RIGHT_2", 1),
+                ("PARM_6", "CUR_LANE_RIGHT_2", 1),
+                ("PARM_7", "CUR_LANE_RIGHT_2", 1),
+                ("PARM_1", "ADJ_LANE_LEFT_1", 2),
+                ("PARM_2", "ADJ_LANE_LEFT_1", 1),
+                ("PARM_3", "ADJ_LANE_LEFT_1", 1),
+                ("PARM_4", "ADJ_LANE_LEFT_1", 2),
+                ("PARM_5", "ADJ_LANE_LEFT_2", 1),
+                ("PARM_6", "ADJ_LANE_LEFT_2", 1),
+                ("PARM_7", "ADJ_LANE_LEFT_2", 1),
+                ("PARM_1", "ADJ_LANE_RIGHT_1", 2),
+                ("PARM_2", "ADJ_LANE_RIGHT_1", 1),
+                ("PARM_3", "ADJ_LANE_RIGHT_1", 1),
+                ("PARM_4", "ADJ_LANE_RIGHT_1", 2),
+                ("PARM_5", "ADJ_LANE_RIGHT_2", 1),
+                ("PARM_6", "ADJ_LANE_RIGHT_2", 1),
+                ("PARM_7", "ADJ_LANE_RIGHT_2", 1),
+                ("GERNBY1","RADAR_HUD", 0),
+                ("GERNBY2","RADAR_HUD", 0),
+                ("GERNBY3","RADAR_HUD", 0),
+                ("GERNBY4","RADAR_HUD", 0),
+                ("GERNBY5","RADAR_HUD", 0),
+                ("GERNBY6","RADAR_HUD", 0),
+                ("CMBS_OFF","RADAR_HUD", 0),
+                ("LEAD_DISTANCE","RADAR_HUD", 0),
+                ("RESUME_INSTRUCTION","RADAR_HUD", 0),
+                ("SOLID_LANES","LKAS_HUD", 0),
+                ("DASHED_LANES","LKAS_HUD", 0),
+                ("STEERING_REQUIRED","LKAS_HUD", 0),
+                ("GERNBY1","LKAS_HUD", 0),
+                ("GERNBY2","LKAS_HUD", 0),
+                ("GERNBY3","LKAS_HUD", 0),
+                ("GERNBY4","LKAS_HUD", 0),
+                ("LKAS_PROBLEM","LKAS_HUD", 0),
+                ("LKAS_OFF","LKAS_HUD", 0),
+                ("LDW_RIGHT","LKAS_HUD", 0),
+                #("LDW_LEFT","LKAS_HUD", 0),
+                ("BEEP","LKAS_HUD", 0),
+                ("LDW_ON","LKAS_HUD", 0),
+                ("LDW_OFF","LKAS_HUD", 0),
+                ("CLEAN_WINDSHIELD","LKAS_HUD", 0),
+                ("DTC","LKAS_HUD", 0),
+                ("CAM_TEMP_HIGH","LKAS_HUD", 0),
+                ("GERNBY1","CAMERA_MESSAGES", 0),
+                ("GERNBY2","CAMERA_MESSAGES", 0),
+                ("STEER_TORQUE_REQUEST", "STEERING_CONTROL", 0),
+                ("GERNBY1", "STEERING_CONTROL", 0),
+                ("GERNBY2", "STEERING_CONTROL", 0),
+                ("STEER_TORQUE", "STEERING_CONTROL",0),
+                ("SPEED_LIMIT", "CAMERA_MESSAGES", 0)]
     checks += [("GAS_PEDAL_2", 100),
-                ("LANE_POSITION_1", 100),
-                ("LANE_POSITION_2", 100),
-                ("LANE_POSITION_3", 100),
-                ("LANE_POSITION_4", 100),
-                ("LANE_POSITION_5", 100),
-                ("LANE_POSITION_6", 100),
-                ("LANE_POSITION_7", 100),
-                ("LANE_POSITION_8", 100)]
+                ("CUR_LANE_LEFT_1", 30),
+                ("CUR_LANE_LEFT_2", 30),
+                ("CUR_LANE_RIGHT_1", 30),
+                ("CUR_LANE_RIGHT_2", 30),
+                ("ADJ_LANE_LEFT_1", 30),
+                ("ADJ_LANE_LEFT_2", 30),
+                ("ADJ_LANE_RIGHT_1", 30),
+                ("ADJ_LANE_RIGHT_2", 30),
+                ("STEERING_CONTROL", 100),
+                ("RADAR_HUD", 10),
+                ("LKAS_HUD", 10),
+                ("CAMERA_MESSAGES", 3)]
   else:
     # Nidec signals.
     signals += [("CRUISE_SPEED_PCM", "CRUISE", 0),
@@ -184,6 +233,9 @@ class CarState(object):
     self.cruise_setting = 0
     self.v_cruise_pcm_prev = 0
     self.blinker_on = 0
+    self.speed_limit = 0
+    self.speed_limit_prev = 0
+    self.new_cruise_target_speed = 0
 
     self.left_blinker_on = 0
     self.right_blinker_on = 0
@@ -279,22 +331,65 @@ class CarState(object):
       self.brake_hold = cp.vl["VSA_STATUS"]['BRAKE_HOLD_ACTIVE']
       self.main_on = cp.vl["SCM_FEEDBACK"]['MAIN_ON']
 
-      self.lane11 = float(cp.vl["LANE_POSITION_1"]["LANE_1"])
-      self.lane12 = cp.vl["LANE_POSITION_1"]["LANE_2"]
-      self.lane21 = float(cp.vl["LANE_POSITION_2"]["LANE_1"])
-      self.lane22 = cp.vl["LANE_POSITION_2"]["LANE_2"]
-      self.lane31 = float(cp.vl["LANE_POSITION_3"]["LANE_1"])
-      self.lane32 = cp.vl["LANE_POSITION_3"]["LANE_2"]
-      self.lane41 = float(cp.vl["LANE_POSITION_4"]["LANE_1"])
-      self.lane42 = cp.vl["LANE_POSITION_4"]["LANE_2"]
-      self.lane51 = float(cp.vl["LANE_POSITION_5"]["LANE_1"])
-      self.lane52 = cp.vl["LANE_POSITION_5"]["LANE_2"]
-      self.lane61 = float(cp.vl["LANE_POSITION_6"]["LANE_1"])
-      self.lane62 = cp.vl["LANE_POSITION_6"]["LANE_2"]
-      self.lane71 = float(cp.vl["LANE_POSITION_7"]["LANE_1"])
-      self.lane72 = cp.vl["LANE_POSITION_7"]["LANE_2"]
-      self.lane81 = float(cp.vl["LANE_POSITION_8"]["LANE_1"])
-      self.lane82 = cp.vl["LANE_POSITION_8"]["LANE_2"]
+      self.lane11 = cp.vl["CUR_LANE_LEFT_1"]["PARM_1"]
+      self.lane12 = cp.vl["CUR_LANE_LEFT_1"]["PARM_2"]
+      self.lane13 = cp.vl["CUR_LANE_LEFT_1"]["PARM_3"]
+      self.lane14 = cp.vl["CUR_LANE_LEFT_1"]["PARM_4"]
+      self.lane15 = cp.vl["CUR_LANE_LEFT_2"]["PARM_5"]
+      self.lane16 = cp.vl["CUR_LANE_LEFT_2"]["PARM_6"]
+      self.lane17 = cp.vl["CUR_LANE_LEFT_2"]["PARM_7"]
+      self.lane31 = cp.vl["CUR_LANE_RIGHT_1"]["PARM_1"]
+      self.lane32 = cp.vl["CUR_LANE_RIGHT_1"]["PARM_2"]
+      self.lane33 = cp.vl["CUR_LANE_RIGHT_1"]["PARM_3"]
+      self.lane34 = cp.vl["CUR_LANE_RIGHT_1"]["PARM_4"]
+      self.lane35 = cp.vl["CUR_LANE_RIGHT_2"]["PARM_5"]
+      self.lane36 = cp.vl["CUR_LANE_RIGHT_2"]["PARM_6"]
+      self.lane37 = cp.vl["CUR_LANE_RIGHT_2"]["PARM_7"]
+      self.lane51 = cp.vl["ADJ_LANE_LEFT_1"]["PARM_1"]
+      self.lane52 = cp.vl["ADJ_LANE_LEFT_1"]["PARM_2"]
+      self.lane53 = cp.vl["ADJ_LANE_LEFT_1"]["PARM_3"]
+      self.lane54 = cp.vl["ADJ_LANE_LEFT_1"]["PARM_4"]
+      self.lane55 = cp.vl["ADJ_LANE_LEFT_2"]["PARM_5"]
+      self.lane56 = cp.vl["ADJ_LANE_LEFT_2"]["PARM_6"]
+      self.lane57 = cp.vl["ADJ_LANE_LEFT_2"]["PARM_7"]
+      self.lane71 = cp.vl["ADJ_LANE_RIGHT_1"]["PARM_1"]
+      self.lane72 = cp.vl["ADJ_LANE_RIGHT_1"]["PARM_2"]
+      self.lane73 = cp.vl["ADJ_LANE_RIGHT_1"]["PARM_3"]
+      self.lane74 = cp.vl["ADJ_LANE_RIGHT_1"]["PARM_4"]
+      self.lane75 = cp.vl["ADJ_LANE_RIGHT_2"]["PARM_5"]
+      self.lane76 = cp.vl["ADJ_LANE_RIGHT_2"]["PARM_6"]
+      self.lane77 = cp.vl["ADJ_LANE_RIGHT_2"]["PARM_7"]
+
+      self.stock_steer_request = cp.vl["STEERING_CONTROL"]["STEER_TORQUE_REQUEST"]
+      self.stock_steer_set_me_x00 = cp.vl["STEERING_CONTROL"]["GERNBY1"]
+      self.stock_steer_set_me_x00_2 = cp.vl["STEERING_CONTROL"]["GERNBY2"]
+      self.stock_steer_steer_torque = cp.vl["STEERING_CONTROL"]["STEER_TORQUE"]
+      self.lkas_hud_solid_lanes = cp.vl["LKAS_HUD"]["SOLID_LANES"]
+      self.lkas_hud_steering_required = cp.vl["LKAS_HUD"]["STEERING_REQUIRED"]
+      self.lkas_hud_GERNBY4 = cp.vl["LKAS_HUD"]["GERNBY4"]
+      self.lkas_hud_GERNBY3 = cp.vl["LKAS_HUD"]["GERNBY3"]
+      self.lkas_hud_dashed_lanes = cp.vl["LKAS_HUD"]["DASHED_LANES"]      
+      self.lkas_hud_GERNBY1 = cp.vl["LKAS_HUD"]["GERNBY1"]      
+      self.lkas_hud_GERNBY2 = cp.vl["LKAS_HUD"]["GERNBY2"]      
+      self.lkas_hud_LKAS_PROBLEM = cp.vl["LKAS_HUD"]["LKAS_PROBLEM"]      
+      self.lkas_hud_LKAS_OFF = cp.vl["LKAS_HUD"]["LKAS_OFF"]      
+      self.lkas_hud_LDW_RIGHT = cp.vl["LKAS_HUD"]["LDW_RIGHT"]      
+      #self.lkas_hud_LDW_LEFT = cp.vl["LKAS_HUD"]["LDW_LEFT"]      
+      self.lkas_hud_BEEP = cp.vl["LKAS_HUD"]["BEEP"]      
+      self.lkas_hud_LDW_ON = cp.vl["LKAS_HUD"]["LDW_ON"]      
+      self.lkas_hud_LDW_OFF = cp.vl["LKAS_HUD"]["LDW_OFF"]      
+      self.lkas_hud_CLEAN_WINDSHIELD = cp.vl["LKAS_HUD"]["CLEAN_WINDSHIELD"]      
+      self.lkas_hud_DTC = cp.vl["LKAS_HUD"]["DTC"]      
+      self.lkas_hud_CAM_TEMP_HIGH = cp.vl["LKAS_HUD"]["CAM_TEMP_HIGH"]      
+      self.radar_hud_gernby1 = cp.vl["RADAR_HUD"]['GERNBY1']
+      self.radar_hud_gernby2 = cp.vl["RADAR_HUD"]['GERNBY2']
+      self.radar_hud_gernby3 = cp.vl["RADAR_HUD"]['GERNBY3']
+      self.radar_hud_gernby4 = cp.vl["RADAR_HUD"]['GERNBY4']
+      self.radar_hud_gernby5 = cp.vl["RADAR_HUD"]['GERNBY5']
+      self.radar_hud_lead_distance = cp.vl["RADAR_HUD"]['LEAD_DISTANCE']
+      self.radar_hud_gernby6 = cp.vl["RADAR_HUD"]['GERNBY6']
+      self.radar_hud_CMBS_OFF = cp.vl["RADAR_HUD"]['CMBS_OFF']
+      self.radar_hud_RESUME_INSTRUCTION = cp.vl["RADAR_HUD"]['RESUME_INSTRUCTION']
 
       #  self.zero_lane_counter = 0
       #else:  
@@ -334,6 +429,11 @@ class CarState(object):
       # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
       self.v_cruise_pcm = self.v_cruise_pcm_prev if cp.vl["ACC_HUD"]['CRUISE_SPEED'] > 160.0 else cp.vl["ACC_HUD"]['CRUISE_SPEED']
       self.v_cruise_pcm_prev = self.v_cruise_pcm
+      temp_speed_limit = max(20, cp.vl["CAMERA_MESSAGES"]['SPEED_LIMIT'])
+      if self.v_cruise_pcm > 0 and temp_speed_limit > 20 and temp_speed_limit != self.speed_limit:
+        print (self.v_cruise_pcm, temp_speed_limit)
+        self.new_cruise_target_speed = int(max(temp_speed_limit, min(1.1 * temp_speed_limit, self.v_cruise_pcm)))
+        self.speed_limit = temp_speed_limit
     else:
       self.brake_switch = cp.vl["POWERTRAIN_DATA"]['BRAKE_SWITCH']
       self.cruise_speed_offset = calc_cruise_offset(cp.vl["CRUISE_PARAMS"]['CRUISE_SPEED_OFFSET'], self.v_ego)

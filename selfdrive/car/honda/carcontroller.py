@@ -54,7 +54,9 @@ def process_hud_alert(hud_alert):
 
 HUDData = namedtuple("HUDData",
                      ["pcm_accel", "v_cruise", "mini_car", "car", "X4",
-                      "lanes", "beep", "chime", "fcw", "acc_alert", "steer_required"])
+                      "lanes", "beep", "chime", "fcw", "acc_alert", "steer_required", 
+                      "r_hud_speed", "gernby1", "gernby2", "gernby3", "gernby4", "LKAS_OFF","LDW_RIGHT", "dashed_lanes",
+                      "LDW_ON","LDW_OFF"])
 
 
 class CarController(object):
@@ -66,13 +68,21 @@ class CarController(object):
     self.packer = CANPacker(dbc_name)
     self.new_radar_config = False
     self.auto_Steer = True
-    self.stock_lane_adjust = 1.
+    self.stock_lane_limit = 1.
     self.context = zmq.Context()
     self.steerpub = self.context.socket(zmq.PUB)
     self.steerpub.bind("tcp://*:8593")
-    self.avg_steer_limit = 1.
+    self.avg_lane_limit = 1.
     self.sample_count = 1.
     self.steerData = ""
+    self.avg_lane_center = 0.
+    self.stock_torque_offset = 0
+    self.stop_protecting_frame = 0
+    self.stock_online = False
+    self.stock_lane_center = 0.
+    self.avg_apply_steer = 0.
+    self.max_stock_steer = 0
+    self.min_stock_steer = 0
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -116,15 +126,24 @@ class CarController(object):
     #print chime, alert_id, hud_alert
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
 
-    hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), 1, hud_car, 0xc1, 
-                  hud_lanes, int(snd_beep), 
-                  self.auto_Steer and not CS.steer_override and snd_chime, 
-                  fcw_display, 
-                  self.auto_Steer and not CS.steer_override and acc_alert, 
-                  self.auto_Steer and not CS.steer_override and steer_required)
+    if not enabled:
+      #CS.lkas_hud_LKAS_OFF = 1
+      CS.lkas_hud_dashed_lanes = 0 #CS.lkas_hud_dashed_lanes
+      CS.lkas_hud_solid_lanes = 0
+    elif CS.lkas_hud_solid_lanes == 0:
+      CS.lkas_hud_dashed_lanes = hud_lanes
+      hud_lanes = 0  
 
-    if not all(isinstance(x, int) and 0 <= x < 256 for x in hud):
-      hud = HUDData(0xc6, 255, 64, 0xc0, 209, 0x40, 0, 0, 0, 0)
+    hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), 1, hud_car, 0xc1, 
+                  max(CS.lkas_hud_solid_lanes, hud_lanes), int(snd_beep), snd_chime, 
+                  fcw_display, acc_alert, steer_required,
+                  int(max(1023, CS.v_ego_raw * 60)), CS.lkas_hud_GERNBY1, 
+                  CS.lkas_hud_GERNBY2, CS.lkas_hud_GERNBY3, CS.lkas_hud_GERNBY4,
+                  CS.lkas_hud_LKAS_OFF, CS.lkas_hud_LDW_RIGHT, CS.lkas_hud_dashed_lanes, 
+                  CS.lkas_hud_LDW_ON, CS.lkas_hud_LDW_OFF)
+
+#    if not all(isinstance(x, int) and 0 <= x < 256 for x in hud):
+#      hud = HUDData(0xc6, 255, 64, 0xc0, 209, 0x40, 0, 0, 0, 0, 0, int(max(1023, CS.v_ego_raw *20)))
 
     # **** process the car messages ****
 
@@ -145,75 +164,107 @@ class CarController(object):
     lkas_active = enabled and not CS.steer_not_allowed and self.auto_Steer
 
     orig_apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))      
-
+    #self.stock_lane_center = 0
+    protect_hard = 0   
+    lane_diff_1 = 0
+    lane_diff_2 = 0
+    cross_diff = 0
+    protect_hard = 0
+    min_steer_limit = 0
+    OP_STEER_AT_STOCK_LANE_CENTER = 0
+    STOCK_FILTER_WIDTH = 15.
+    force_zmq_send = False
+    MAX_STEERING_SAMPLES = int(20000. / (CS.v_ego_raw + 1))
+    speed_factored_average = int(500 / (CS.v_ego_raw + 1))
+    
     if False == False:
-      MAX_STEERING_SAMPLES = 200.
-      OP_STEER_AT_STOCK_CENTER = 0.2
 
-      stock_lane_center = 0.
-      stock_online = True
-      if CS.lane12 != 0 and CS.lane32 != 0:
-        if (abs(CS.lane11) != CS.lane11) == (abs(CS.lane31) != CS.lane31):
-          if abs(CS.lane11) < abs(CS.lane31):
-            stock_lane_center = CS.lane11
-          else:
-            stock_lane_center = CS.lane31
-        elif CS.lane52 != 0 and CS.lane72 != 0:
-          stock_lane_center = (CS.lane11 + CS.lane31) / 2.
-        elif CS.lane52 != 0:
-          stock_lane_center = CS.lane11
-        else: 
-          stock_lane_center = CS.lane31
-      elif CS.lane12 != 0:
-        stock_lane_center = CS.lane11
-      elif CS.lane32 != 0:
-        stock_lane_center = CS.lane31
-      else:
-        stock_online = False
-      
-      if stock_online:
+      if CS.stock_steer_steer_torque != 0:          
+        apply_steer = int(CS.stock_steer_steer_torque)
+        lkas_active = int(CS.stock_steer_request)
+
+      elif (CS.lane13 + CS.lane33 + CS.lane53 + CS.lane73) > 0:
+            
+        self.stock_online = True
+        
         self.sample_count = min(MAX_STEERING_SAMPLES, self.sample_count + 1.)
-        STOCK_FILTER_WIDTH = 20.
-        if (abs(actuators.steer) != actuators.steer) == (abs(stock_lane_center) != stock_lane_center):
+
+        total_lane_confidence = (CS.lane13 + CS.lane33 + CS.lane53 + CS.lane73) 
+        
+        self.stock_lane_center = ((CS.lane11 * CS.lane13) + (CS.lane31 * CS.lane33) + (CS.lane51 * CS.lane53) + (CS.lane71 * CS.lane73)) / total_lane_confidence
+
+        min_steer_limit = 0.
+        if (CS.lane13 + CS.lane53) > (CS.lane33 + CS.lane73) and actuators.steer < 0:
+          #OP steer direction favors strong lane confidence
+          min_steer_limit = 0.333
+
+        if actuators.steer < 0 and self.avg_lane_center < 0:
           # OP agrees with stock lane orientation
-          self.stock_lane_adjust = min(1.0, OP_STEER_AT_STOCK_CENTER + min(STOCK_FILTER_WIDTH, abs(stock_lane_center)) / STOCK_FILTER_WIDTH)
+          self.stock_lane_limit = min(1., min_steer_limit + min(STOCK_FILTER_WIDTH, abs(self.avg_lane_center)) / STOCK_FILTER_WIDTH)
         else:
           # OP disagrees with stock lane orientation
-          self.stock_lane_adjust = max(0.2, OP_STEER_AT_STOCK_CENTER - 1. + ((STOCK_FILTER_WIDTH - min(STOCK_FILTER_WIDTH, abs(stock_lane_center))) / STOCK_FILTER_WIDTH))
+          self.stock_lane_limit = max(0., min_steer_limit - 1. + ((STOCK_FILTER_WIDTH - min(STOCK_FILTER_WIDTH, abs(self.avg_lane_center))) / STOCK_FILTER_WIDTH))
+            
+        
+        #self.avg_lane_center = ((speed_factored_average * self.avg_lane_center) + float(self.stock_lane_center)) / (speed_factored_average + 1)
+
+        #if (abs(actuators.steer) != actuators.steer) == (abs(self.avg_lane_center) != self.avg_lane_center):
+          # OP agrees with stock lane orientation
+        #  self.stock_lane_limit = min(1., OP_STEER_AT_STOCK_LANE_CENTER + min(STOCK_FILTER_WIDTH, abs(self.avg_lane_center)) / STOCK_FILTER_WIDTH)
+        #else:
+          # OP disagrees with stock lane orientation
+        #  self.stock_lane_limit = max(min_steer_limit, OP_STEER_AT_STOCK_LANE_CENTER - 1. + ((STOCK_FILTER_WIDTH - min(STOCK_FILTER_WIDTH, abs(self.avg_lane_center))) / STOCK_FILTER_WIDTH))
+        
       else:
         self.sample_count = max(0., self.sample_count - 1.)
-        self.stock_lane_adjust = 1.
+        self.stock_lane_limit = 1.
 
-      self.avg_steer_limit = ((self.sample_count * self.avg_steer_limit) + self.stock_lane_adjust) / (self.sample_count + 1.)
+      self.avg_lane_limit = ((self.sample_count * self.avg_lane_limit) + self.stock_lane_limit) / (self.sample_count + 1.)
       
-      if not stock_online:
-        self.stock_lane_adjust = self.avg_steer_limit
+      if not self.stock_online:
+        self.stock_lane_limit = self.avg_lane_limit
       
+      apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX * self.stock_lane_limit, STEER_MAX * self.stock_lane_limit))
+
       if CS.blinker_on or not self.auto_Steer or (CS.steer_override and \
           (abs(actuators.steer) != actuators.steer) == (abs(CS.steer_torque_driver) != CS.steer_torque_driver)):
         apply_steer = 0
 
-      apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX * self.stock_lane_adjust, STEER_MAX * self.stock_lane_adjust))
-
-
     else:
       apply_steer = orig_apply_steer
       
+    #self.avg_apply_steer = ((speed_factored_average * self.avg_apply_steer) + apply_steer) / (speed_factored_average + 1)
+
     # Send CAN commands.
     can_sends = []
 
     # Send steering command.
     idx = frame % 4
 
-    if (frame % 5) == 0:
-      self.steerData += ('steerData,testName=secondRun OP_apply_steer=%d,angle_steers=%d,angle_steers_rate=%d,avg_steer_limit=%d,frame=%d,avg_lane_center=%d,lane11=%d,lane12=%d,lane21=%d,lane22=%d,lane31=%d,lane32=%d,lane41=%d,lane42=%d,lane51=%d,lane52=%d,lane61=%d,lane62=%d,lane71=%d,lane72=%d,lane81=%d,lane82=%d,sample_count=%d,sent_apply_steer=%d,steer_torque_driver=%d,stock_lane_adjust=%d %d\n' \
-              % (orig_apply_steer, CS.angle_steers, CS.angle_steers_rate, self.avg_steer_limit, frame, stock_lane_center, CS.lane11, CS.lane12, CS.lane21, CS.lane22, CS.lane31, CS.lane32, CS.lane41, CS.lane42, CS.lane51, CS.lane52, CS.lane61, CS.lane62, CS.lane71, CS.lane72, CS.lane81, CS.lane82, self.sample_count, apply_steer, CS.steer_torque_driver, self.stock_lane_adjust * 100, int(time.time() * 1000000000)))
-    elif ((frame + 2) % 40) == 0:
-      self.steerpub.send(self.steerData)
-      self.steerData = ""
+    #if CS.stock_steer_steer_torque < self.min_stock_steer:
+    #  self.min_stock_steer = CS.stock_steer_steer_torque
+    #  print(self.min_stock_steer)
+    #elif  CS.stock_steer_steer_torque > self.max_stock_steer:
+    #  self.max_stock_steer = CS.stock_steer_steer_torque
+    #  print(self.max_stock_steer)
+    #elif  (frame % 10000) == 0:
+    #  print(max(abs(self.min_stock_steer), abs(self.max_stock_steer)))
 
+
+    #if (int(CS.stock_steer_request) > 0 and not lkas_active) or (CS.stock_steer_steer_torque != 0 and CS.stock_steer_steer_torque > -STEER_MAX and CS.stock_steer_steer_torque < STEER_MAX) or (CS.stock_steer_steer_torque != 0 and ((CS.stock_steer_steer_torque > 0) != (apply_steer > 0))):
+      
     can_sends.append(hondacan.create_steering_control(self.packer, int(apply_steer), lkas_active, CS.CP.carFingerprint, idx))
     #print (steerData)
+
+    if (frame % 10) == 0 or force_zmq_send:
+          #self.steerData += ('steerData,testName=secondRun speed=%d,lane12=%d,lane32=%d,lane52=%d,lane72=%d,stock_lane_center=%d,protect_hard=%d,min_steer_limit=%d,OP_STEER_AT_STOCK_LANE_CENTER=%d,lane_diff_1=%d,lane_diff_2=%d,cross_diff=%d,OP_apply_steer=%d,angle_steers=%d,angle_steers_rate=%d,avg_steer_limit=%d,frame=%d,avg_lane_center=%d,lane11=%d,lane12=%d,lane21=%d,lane22=%d,lane31=%d,lane32=%d,lane41=%d,lane42=%d,lane51=%d,lane52=%d,lane61=%d,lane62=%d,lane71=%d,lane72=%d,lane81=%d,lane82=%d,sample_count=%d,sent_apply_steer=%d,steer_torque_driver=%d,stock_lane_limit=%d %d\n' \
+      self.steerData += ('%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d|' \
+              % (CS.lkas_hud_GERNBY1, CS.lkas_hud_GERNBY2, CS.lkas_hud_LKAS_PROBLEM, CS.lkas_hud_LKAS_OFF, CS.lkas_hud_LDW_RIGHT, CS.lkas_hud_BEEP, CS.lkas_hud_LDW_ON, CS.lkas_hud_LDW_OFF, CS.lkas_hud_CLEAN_WINDSHIELD, CS.lkas_hud_DTC, CS.lkas_hud_CAM_TEMP_HIGH, CS.radar_hud_gernby1, CS.radar_hud_gernby2, CS.radar_hud_gernby3, CS.radar_hud_gernby4, CS.radar_hud_gernby5, CS.radar_hud_gernby6, CS.radar_hud_CMBS_OFF, CS.radar_hud_RESUME_INSTRUCTION, CS.stock_steer_request, CS.stock_steer_set_me_x00, CS.stock_steer_set_me_x00_2, CS.stock_steer_steer_torque, CS.lkas_hud_solid_lanes, CS.lkas_hud_steering_required, CS.lkas_hud_GERNBY3, CS.lkas_hud_GERNBY4, CS.lkas_hud_dashed_lanes, CS.v_ego_raw,CS.lane11,CS.lane12,CS.lane13,CS.lane14,CS.lane15,CS.lane16,CS.lane17,CS.lane31,CS.lane32,CS.lane33,CS.lane34,CS.lane35,CS.lane36,CS.lane37,CS.lane51,CS.lane52,CS.lane53,CS.lane54,CS.lane55,CS.lane56,CS.lane57,CS.lane71,CS.lane72,CS.lane73,CS.lane74,CS.lane75,CS.lane76,CS.lane77,self.stock_lane_center,protect_hard,100*min_steer_limit,100*OP_STEER_AT_STOCK_LANE_CENTER,lane_diff_1,lane_diff_2,cross_diff,orig_apply_steer, CS.angle_steers, CS.angle_steers_rate, self.avg_lane_limit, frame, self.avg_lane_center, self.sample_count, apply_steer, CS.steer_torque_driver, self.stock_lane_limit * 100, int(time.time() * 1000000000)))
+
+
+    elif len(self.steerData) > 2000:
+      self.steerpub.send(self.steerData)
+      self.steerData = ""
 
     # Send dashboard UI commands.
     if (frame % 10) == 0:
@@ -223,10 +274,21 @@ class CarController(object):
     if CS.CP.radarOffCan:
       # If using stock ACC, spam cancel command to kill gas when OP disengages.
       if pcm_cancel_cmd:
-        #print ("cancelled")
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx))
       elif CS.stopped:
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
+      #elif enabled and CS.lkas_hud_solid_lanes == 0:
+      #  if frame % 1000 < 330:
+      #    can_sends.append(hondacan.spam_buttons_command(self.packer, 1, idx))
+      elif CS.new_cruise_target_speed > 0 and (frame % 50) <= 20:
+        if enabled and CS.new_cruise_target_speed < CS.v_cruise_pcm:
+          #print(CS.v_cruise_pcm, CS.new_cruise_target_speed)
+          can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.DECEL_SET, idx))
+        elif enabled and CS.new_cruise_target_speed > CS.v_cruise_pcm:
+          #print(CS.v_cruise_pcm, CS.new_cruise_target_speed)
+          can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
+        elif CS.new_cruise_target_speed == CS.v_cruise_pcm:
+          CS.new_cruise_target_speed = 0
     else:
       # Send gas and brake commands.
       if (frame % 2) == 0:

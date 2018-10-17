@@ -137,7 +137,7 @@ struct MessageState {
   bool honda_update_counter(int64_t v) {
     uint8_t old_counter = counter;
     counter = v;
-    if (((old_counter+1) & 3) != v) {
+    if ((((old_counter+1) & 3) != v) and address != 0x33d and address != 0xe4) {
       counter_fail += 1;
       if (counter_fail > 1) {
         INFO("%X COUNTER FAIL %d -- %d vs %d\n", address, counter_fail, old_counter, (int)v);
@@ -254,7 +254,10 @@ class CANParser {
 
         if (can_forward_period_ns > 0) raw_can_values[cmsg.getSrc()][cmsg.getAddress()] = read_u64_be(dat);
 
-        if (cmsg.getSrc() != bus and (cmsg.getAddress() < 0x240 or cmsg.getAddress() > 0x24A)) {
+        if (((cmsg.getAddress() == 0xe4 or cmsg.getAddress() == 0x33d) and cmsg.getSrc() == bus) or (cmsg.getSrc() != bus and cmsg.getAddress() != 0x33d and cmsg.getAddress() != 0xe4 and (cmsg.getAddress() < 0x240 or cmsg.getAddress() > 0x24A))) {
+        //if (((cmsg.getAddress() == 0xe4 or cmsg.getAddress() == 0x33d) and cmsg.getSrc() == bus) or cmsg.getAddress() > 1 or  
+        //   (cmsg.getSrc() != bus and cmsg.getAddress() != 0xe4 and cmsg.getAddress() != 0x33d and (cmsg.getAddress() < 0x240 or cmsg.getAddress() > 0x24A))) {
+        //if (cmsg.getSrc() != bus and (cmsg.getAddress() < 0x240 or cmsg.getAddress() > 0x24A)) {
           // DEBUG("skip %d: wrong bus\n", cmsg.getAddress());
           continue;
         }
@@ -374,7 +377,7 @@ class CANParser {
   void *subscriber = NULL;
 
   void *forwarder = NULL;
-  uint64_t can_forward_period_ns = 200000000;
+  uint64_t can_forward_period_ns = 100000000;
   uint64_t next_can_forward_ns = 0;
   std::unordered_map<uint32_t, std::unordered_map<uint32_t, uint64_t>> raw_can_values;
 

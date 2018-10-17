@@ -30,7 +30,7 @@ def unblock_stdout():
           break
         continue
 
-      if not dat:
+      if not dat: 
         break
 
       try:
