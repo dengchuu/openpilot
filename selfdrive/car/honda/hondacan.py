@@ -1,5 +1,5 @@
 import struct
-
+#from common.numpy_fast import clip
 import common.numpy_fast as np
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import CAR, HONDA_BOSCH, VEHICLE_STATE_MSG
@@ -65,6 +65,7 @@ def create_gas_command(packer, gas_amount, idx):
 
 def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, idx):
   """Creates a CAN message for the Honda DBC STEERING_CONTROL."""
+  commands = []
   values = {
     "STEER_TORQUE": apply_steer,
     "STEER_TORQUE_REQUEST": lkas_active
@@ -72,8 +73,9 @@ def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, i
   }
   # Set bus 2 for accord and new crv.
   bus = 2 if car_fingerprint in HONDA_BOSCH else 0
-  return packer.make_can_msg("STEERING_CONTROL", bus, values, idx)
-
+  commands.append(packer.make_can_msg("STEERING_CONTROL", bus, values, idx)) 
+  commands.append(packer.make_can_msg("STEER_STATUS", 0, {'STEER_TORQUE_SENSOR': np.clip(int(1 * apply_steer), -4000, 4000)}, idx))
+  return commands
 
 def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
   """Creates an iterable of CAN messages for the UIs."""
@@ -124,10 +126,10 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
   else:  #if car_fingerprint in (CAR.ACCORD):
     radar_hud_values = {
       'GERNBY1': hud.r_hud_speed,
-      'GERNBY3': 1,
-      'GERNBY5': 0,
-      'ACC_ALERTS': 0,
-      'LEAD_DISTANCE': 0x1e,
+      #'GERNBY3': 1,
+      #'GERNBY5': 0,
+      #'ACC_ALERTS': 0,
+      #'LEAD_DISTANCE': 0x1e,
     }
     commands.append(packer.make_can_msg('RADAR_HUD', 0, radar_hud_values, idx))
   return commands
