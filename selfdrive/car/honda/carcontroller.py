@@ -6,7 +6,7 @@ from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip
 from selfdrive.car.honda import hondacan
-from selfdrive.car.honda.values import AH, CruiseButtons, CAR
+from selfdrive.car.honda.values import AH, CruiseButtons, CAR, CruiseSettings
 from selfdrive.can.packer import CANPacker
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
@@ -126,6 +126,7 @@ class CarController(object):
     #print chime, alert_id, hud_alert
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
 
+    stock_lkas_enabled = CS.lkas_hud_dashed_lanes + CS.lkas_hud_solid_lanes > 0
     if not enabled:
       #CS.lkas_hud_LKAS_OFF = 1
       CS.lkas_hud_dashed_lanes = 0 #CS.lkas_hud_dashed_lanes
@@ -192,9 +193,9 @@ class CarController(object):
         
         if (CS.lane13 + CS.lane53) > (CS.lane33 + CS.lane73) and actuators.steer < 0:
           #OP steer direction favors strong lane confidence
-          min_steer_limit = 0.3
+          min_steer_limit = 0.2
         else:
-          min_steer_limit = 0.1
+          min_steer_limit = 0.0
 
         if actuators.steer > 0 and self.avg_lane_center < 0:
           # OP agrees with stock lane orientation
@@ -202,17 +203,7 @@ class CarController(object):
         else:
           # OP disagrees with stock lane orientation
           self.stock_lane_limit = max(min_steer_limit, OP_STEER_AT_STOCK_LANE_CENTER - 1. + ((STOCK_FILTER_WIDTH - min(STOCK_FILTER_WIDTH, abs(self.avg_lane_center))) / STOCK_FILTER_WIDTH))
-            
-        
-        #self.avg_lane_center = ((speed_factored_average * self.avg_lane_center) + float(self.stock_lane_center)) / (speed_factored_average + 1)
-
-        #if (abs(actuators.steer) != actuators.steer) == (abs(self.avg_lane_center) != self.avg_lane_center):
-          # OP agrees with stock lane orientation
-        #  self.stock_lane_limit = min(1., OP_STEER_AT_STOCK_LANE_CENTER + min(STOCK_FILTER_WIDTH, abs(self.avg_lane_center)) / STOCK_FILTER_WIDTH)
-        #else:
-          # OP disagrees with stock lane orientation
-        #  self.stock_lane_limit = max(min_steer_limit, OP_STEER_AT_STOCK_LANE_CENTER - 1. + ((STOCK_FILTER_WIDTH - min(STOCK_FILTER_WIDTH, abs(self.avg_lane_center))) / STOCK_FILTER_WIDTH))
-        
+                    
       else:
         self.sample_count = max(0., self.sample_count - 1.)
         self.stock_lane_limit = 1.
@@ -242,26 +233,11 @@ class CarController(object):
 
     # Send steering command.
     idx = frame % 4
-
-    #if CS.stock_steer_steer_torque < self.min_stock_steer:
-    #  self.min_stock_steer = CS.stock_steer_steer_torque
-    #  print(self.min_stock_steer)
-    #elif  CS.stock_steer_steer_torque > self.max_stock_steer:
-    #  self.max_stock_steer = CS.stock_steer_steer_torque
-    #  print(self.max_stock_steer)
-    #elif  (frame % 10000) == 0:
-    #  print(max(abs(self.min_stock_steer), abs(self.max_stock_steer)))
-
-
-    #if (int(CS.stock_steer_request) > 0 and not lkas_active) or (CS.stock_steer_steer_torque != 0 and CS.stock_steer_steer_torque > -STEER_MAX and CS.stock_steer_steer_torque < STEER_MAX) or (CS.stock_steer_steer_torque != 0 and ((CS.stock_steer_steer_torque > 0) != (apply_steer > 0))):
       
     #can_sends.append(hondacan.create_steering_control(self.packer, int(apply_steer), lkas_active, CS.CP.carFingerprint, idx))
     can_sends.extend(hondacan.create_steering_control(self.packer, int(apply_steer), lkas_active, CS.CP.carFingerprint, idx))
 
-    #print (steerData)
-
     if (frame % 10) == 0 or force_zmq_send:
-          #self.steerData += ('steerData,testName=secondRun speed=%d,lane12=%d,lane32=%d,lane52=%d,lane72=%d,stock_lane_center=%d,protect_hard=%d,min_steer_limit=%d,OP_STEER_AT_STOCK_LANE_CENTER=%d,lane_diff_1=%d,lane_diff_2=%d,cross_diff=%d,OP_apply_steer=%d,angle_steers=%d,angle_steers_rate=%d,avg_steer_limit=%d,frame=%d,avg_lane_center=%d,lane11=%d,lane12=%d,lane21=%d,lane22=%d,lane31=%d,lane32=%d,lane41=%d,lane42=%d,lane51=%d,lane52=%d,lane61=%d,lane62=%d,lane71=%d,lane72=%d,lane81=%d,lane82=%d,sample_count=%d,sent_apply_steer=%d,steer_torque_driver=%d,stock_lane_limit=%d %d\n' \
       self.steerData += ('%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d|' \
               % (CS.lkas_hud_GERNBY1, CS.lkas_hud_GERNBY2, CS.lkas_hud_LKAS_PROBLEM, CS.lkas_hud_LKAS_OFF, CS.lkas_hud_LDW_RIGHT, CS.lkas_hud_BEEP, CS.lkas_hud_LDW_ON, CS.lkas_hud_LDW_OFF, CS.lkas_hud_CLEAN_WINDSHIELD, CS.lkas_hud_DTC, CS.lkas_hud_CAM_TEMP_HIGH, CS.radar_hud_gernby1, CS.radar_hud_gernby2, CS.radar_hud_gernby3, CS.radar_hud_gernby4, CS.radar_hud_gernby5, CS.radar_hud_gernby6, CS.radar_hud_CMBS_OFF, CS.radar_hud_RESUME_INSTRUCTION, CS.stock_steer_request, CS.stock_steer_set_me_x00, CS.stock_steer_set_me_x00_2, CS.stock_steer_steer_torque, CS.lkas_hud_solid_lanes, CS.lkas_hud_steering_required, CS.lkas_hud_GERNBY3, CS.lkas_hud_GERNBY4, CS.lkas_hud_dashed_lanes, CS.v_ego_raw,CS.lane11,CS.lane12,CS.lane13,CS.lane14,CS.lane15,CS.lane16,CS.lane17,CS.lane31,CS.lane32,CS.lane33,CS.lane34,CS.lane35,CS.lane36,CS.lane37,CS.lane51,CS.lane52,CS.lane53,CS.lane54,CS.lane55,CS.lane56,CS.lane57,CS.lane71,CS.lane72,CS.lane73,CS.lane74,CS.lane75,CS.lane76,CS.lane77,self.stock_lane_center,protect_hard,100*min_steer_limit,100*OP_STEER_AT_STOCK_LANE_CENTER,lane_diff_1,lane_diff_2,cross_diff,orig_apply_steer, CS.angle_steers, CS.angle_steers_rate, self.avg_lane_limit, frame, self.avg_lane_center, self.sample_count, apply_steer, CS.steer_torque_driver, self.stock_lane_limit * 100, int(time.time() * 1000000000)))
 
@@ -280,9 +256,9 @@ class CarController(object):
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx))
       elif CS.stopped:
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
-      elif enabled and CS.lkas_hud_solid_lanes == 0:
+      elif enabled != stock_lkas_enabled:
         if frame % 1000 < 330:
-          can_sends.append(hondacan.spam_buttons_command(self.packer, 1, idx))
+          can_sends.append(hondacan.spam_lkas_command(self.packer, CruiseSettings.LKAS, idx))
       elif CS.new_cruise_target_speed > 0 and (frame % 50) <= 20:
         if enabled and CS.new_cruise_target_speed < CS.v_cruise_pcm:
           #print(CS.v_cruise_pcm, CS.new_cruise_target_speed)

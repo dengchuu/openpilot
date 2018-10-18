@@ -7,6 +7,12 @@ class CruiseButtons:
   CANCEL      = 2
   MAIN        = 1
 
+# Car button codes
+class CruiseSettings:
+  FOLLOW_DIST = 3
+  TBD         = 2
+  LKAS        = 1
+
 #car chimes: enumeration from dbc file. Chimes are for alerts and warnings
 class CM:
   MUTE = 0

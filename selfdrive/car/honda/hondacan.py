@@ -74,7 +74,7 @@ def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, i
   # Set bus 2 for accord and new crv.
   bus = 2 if car_fingerprint in HONDA_BOSCH else 0
   commands.append(packer.make_can_msg("STEERING_CONTROL", bus, values, idx)) 
-  commands.append(packer.make_can_msg("STEER_STATUS", 0, {'STEER_TORQUE_SENSOR': np.clip(int(1 * apply_steer), -4000, 4000)}, idx))
+  commands.append(packer.make_can_msg("STEER_STATUS", 0, {'STEER_TORQUE_SENSOR': int(0.5 * apply_steer)}, idx))
   return commands
 
 def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
@@ -159,5 +159,12 @@ def spam_buttons_command(packer, button_val, idx):
   values = {
     'CRUISE_BUTTONS': button_val,
     'CRUISE_SETTING': 0,
+  }
+  return packer.make_can_msg("SCM_BUTTONS", 0, values, idx)
+
+def spam_lkas_command(packer, button_val, idx):
+  values = {
+    'CRUISE_BUTTONS': 0
+    'CRUISE_SETTING': button_val,
   }
   return packer.make_can_msg("SCM_BUTTONS", 0, values, idx)

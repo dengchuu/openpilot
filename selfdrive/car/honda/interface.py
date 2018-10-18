@@ -10,7 +10,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, get_events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.honda.carstate import CarState, get_can_parser
-from selfdrive.car.honda.values import CruiseButtons, CM, BP, AH, CAR, HONDA_BOSCH
+from selfdrive.car.honda.values import CruiseButtons, CM, BP, AH, CAR, HONDA_BOSCH, CruiseSetting
 from selfdrive.controls.lib.planner import A_ACC_MAX
 
 try:
@@ -458,10 +458,6 @@ class CarInterface(object):
         be.type = 'cancel'
       elif but == CruiseButtons.MAIN:
         be.type = 'altButton3'
-      elif but == 1:
-        be.type = 'altButton1'
-        #print("toggle steering")
-        #self.CC.auto_Steer = not self.CC.auto_Steer 
       buttonEvents.append(be)
 
     if self.CS.cruise_setting != self.CS.prev_cruise_setting:
@@ -474,10 +470,9 @@ class CarInterface(object):
       else:
         be.pressed = False
         but = self.CS.prev_cruise_setting
-      #if but == 1:
-      #  be.type = 'altButton1'
-      #  if be.pressed == False:
-      #    print("toggle steering")
+      if but == CruiseSetting.LKAS:
+        be.type = 'altButton1'
+        #if be.pressed == False:
           #self.CC.auto_Steer = not self.CC.auto_Steer 
       # TODO: more buttons?
       buttonEvents.append(be)
