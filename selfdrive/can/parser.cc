@@ -254,11 +254,9 @@ class CANParser {
 
         if (can_forward_period_ns > 0) raw_can_values[cmsg.getSrc()][cmsg.getAddress()] = read_u64_be(dat);
 
-        if (((cmsg.getAddress() == 0xe4 or cmsg.getAddress() == 0x33d) and cmsg.getSrc() == bus) or (cmsg.getSrc() != bus and cmsg.getAddress() != 0x33d and cmsg.getAddress() != 0xe4 and (cmsg.getAddress() < 0x240 or cmsg.getAddress() > 0x24A))) {
-        //if (((cmsg.getAddress() == 0xe4 or cmsg.getAddress() == 0x33d) and cmsg.getSrc() == bus) or cmsg.getAddress() > 1 or  
-        //   (cmsg.getSrc() != bus and cmsg.getAddress() != 0xe4 and cmsg.getAddress() != 0x33d and (cmsg.getAddress() < 0x240 or cmsg.getAddress() > 0x24A))) {
-        //if (cmsg.getSrc() != bus and (cmsg.getAddress() < 0x240 or cmsg.getAddress() > 0x24A)) {
-          // DEBUG("skip %d: wrong bus\n", cmsg.getAddress());
+        if (((cmsg.getAddress() == 0xe4 or cmsg.getAddress() == 0x33d) and cmsg.getSrc() == bus) or \
+             (cmsg.getSrc() != bus and cmsg.getAddress() != 0x33d and cmsg.getAddress() != 0xe4 and \
+             (cmsg.getAddress() < 0x240 or cmsg.getAddress() > 0x24A))) {
           continue;
         }
         auto state_it = message_states.find(cmsg.getAddress());
@@ -287,12 +285,13 @@ class CANParser {
           next_can_forward_ns += can_forward_period_ns;
           // next_can_forward_ns starts at 0, so it needs to be reset.  Also handle delays.
           if (sec > next_can_forward_ns) next_can_forward_ns = sec + can_forward_period_ns;
+          std::string canOut = "";
           for (auto src : raw_can_values) {
               for (auto pid : src.second) {
-                  std::string canOut = std::to_string(src.first) + " " + std::to_string(pid.first) + " " + std::to_string(pid.second);
-                  zmq_send(forwarder, canOut.data(), canOut.size(), 0);
+                  canOut = canOut + std::to_string(src.first) + " " + std::to_string(pid.first) + " " + std::to_string(pid.second) + "|";
               }
           }
+          zmq_send(forwarder, canOut.data(), canOut.size(), 0);
       }
   }
 
