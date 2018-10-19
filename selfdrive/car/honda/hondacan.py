@@ -49,7 +49,6 @@ def create_brake_command(packer, apply_brake, pcm_override, pcm_cancel_cmd, chim
   }
   return packer.make_can_msg("BRAKE_COMMAND", 0, values, idx)
 
-
 def create_gas_command(packer, gas_amount, idx):
   """Creates a CAN message for the Honda DBC GAS_COMMAND."""
   enable = gas_amount > 0.001
@@ -61,7 +60,6 @@ def create_gas_command(packer, gas_amount, idx):
     values["GAS_COMMAND2"] = gas_amount * 255.
 
   return packer.make_can_msg("GAS_COMMAND", 0, values, idx)
-
 
 def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, idx):
   """Creates a CAN message for the Honda DBC STEERING_CONTROL."""

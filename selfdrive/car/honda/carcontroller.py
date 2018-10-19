@@ -128,7 +128,6 @@ class CarController(object):
 
     stock_lkas_enabled = CS.lkas_hud_dashed_lanes + CS.lkas_hud_solid_lanes > 0
     if not enabled:
-      #CS.lkas_hud_LKAS_OFF = 1
       CS.lkas_hud_dashed_lanes = 0 #CS.lkas_hud_dashed_lanes
       CS.lkas_hud_solid_lanes = 0
     elif CS.lkas_hud_solid_lanes == 0:
@@ -165,7 +164,6 @@ class CarController(object):
     lkas_active = enabled and not CS.steer_not_allowed and self.auto_Steer
 
     orig_apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))      
-    #self.stock_lane_center = 0
     protect_hard = 0   
     lane_diff_1 = 0
     lane_diff_2 = 0
@@ -190,7 +188,6 @@ class CarController(object):
         
         self.stock_lane_center = ((CS.lane11 * CS.lane13) + (CS.lane31 * CS.lane33) + (CS.lane51 * CS.lane53) + (CS.lane71 * CS.lane73)) / total_lane_confidence
 
-        
         if (CS.lane13 + CS.lane53) > (CS.lane33 + CS.lane73) and actuators.steer < 0:
           #OP steer direction favors strong lane confidence
           min_steer_limit = 0.2
@@ -218,15 +215,12 @@ class CarController(object):
     else:
       apply_steer = orig_apply_steer
       
-    #self.avg_apply_steer = ((speed_factored_average * self.avg_apply_steer) + apply_steer) / (speed_factored_average + 1)
     if CS.stock_steer_steer_torque != 0:          
       apply_steer = int(clip(1.15 * CS.stock_steer_steer_torque, -STEER_MAX, STEER_MAX))
       lkas_active = int(CS.stock_steer_request)
 
-    #if CS.blinker_on or not self.auto_Steer or (CS.steer_override and \
-    #    (apply_steer < 0) == (CS.steer_torque_driver < 0)):
-    #  apply_steer = 0
-
+    if CS.blinker_on or not self.auto_Steer or (CS.steer_override and (apply_steer < 0) == (CS.steer_torque_driver < 0)):
+      apply_steer = 0
 
     # Send CAN commands.
     can_sends = []
@@ -234,14 +228,22 @@ class CarController(object):
     # Send steering command.
     idx = frame % 4
       
-    #can_sends.append(hondacan.create_steering_control(self.packer, int(apply_steer), lkas_active, CS.CP.carFingerprint, idx))
     can_sends.extend(hondacan.create_steering_control(self.packer, int(apply_steer), lkas_active, CS.CP.carFingerprint, idx))
 
-    if (frame % 10) == 0 or force_zmq_send:
+    if (frame % 10) == 0:
       self.steerData += ('%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d|' \
-              % (CS.lkas_hud_GERNBY1, CS.lkas_hud_GERNBY2, CS.lkas_hud_LKAS_PROBLEM, CS.lkas_hud_LKAS_OFF, CS.lkas_hud_LDW_RIGHT, CS.lkas_hud_BEEP, CS.lkas_hud_LDW_ON, CS.lkas_hud_LDW_OFF, CS.lkas_hud_CLEAN_WINDSHIELD, CS.lkas_hud_DTC, CS.lkas_hud_CAM_TEMP_HIGH, CS.radar_hud_gernby1, CS.radar_hud_gernby2, CS.radar_hud_gernby3, CS.radar_hud_gernby4, CS.radar_hud_gernby5, CS.radar_hud_gernby6, CS.radar_hud_CMBS_OFF, CS.radar_hud_RESUME_INSTRUCTION, CS.stock_steer_request, CS.stock_steer_set_me_x00, CS.stock_steer_set_me_x00_2, CS.stock_steer_steer_torque, CS.lkas_hud_solid_lanes, CS.lkas_hud_steering_required, CS.lkas_hud_GERNBY3, CS.lkas_hud_GERNBY4, CS.lkas_hud_dashed_lanes, CS.v_ego_raw,CS.lane11,CS.lane12,CS.lane13,CS.lane14,CS.lane15,CS.lane16,CS.lane17,CS.lane31,CS.lane32,CS.lane33,CS.lane34,CS.lane35,CS.lane36,CS.lane37,CS.lane51,CS.lane52,CS.lane53,CS.lane54,CS.lane55,CS.lane56,CS.lane57,CS.lane71,CS.lane72,CS.lane73,CS.lane74,CS.lane75,CS.lane76,CS.lane77,self.stock_lane_center,protect_hard,100*min_steer_limit,100*OP_STEER_AT_STOCK_LANE_CENTER,lane_diff_1,lane_diff_2,cross_diff,orig_apply_steer, CS.angle_steers, CS.angle_steers_rate, self.avg_lane_limit, frame, self.avg_lane_center, self.sample_count, apply_steer, CS.steer_torque_driver, self.stock_lane_limit * 100, int(time.time() * 1000000000)))
-
-    elif len(self.steerData) > 2000:
+              % (CS.lkas_hud_GERNBY1, CS.lkas_hud_GERNBY2, CS.lkas_hud_LKAS_PROBLEM, CS.lkas_hud_LKAS_OFF, CS.lkas_hud_LDW_RIGHT, CS.lkas_hud_BEEP, 
+              CS.lkas_hud_LDW_ON, CS.lkas_hud_LDW_OFF, CS.lkas_hud_CLEAN_WINDSHIELD, CS.lkas_hud_DTC, CS.lkas_hud_CAM_TEMP_HIGH, CS.radar_hud_gernby1, 
+              CS.radar_hud_gernby2, CS.radar_hud_gernby3, CS.radar_hud_gernby4, CS.radar_hud_gernby5, CS.radar_hud_gernby6, CS.radar_hud_CMBS_OFF, 
+              CS.radar_hud_RESUME_INSTRUCTION, CS.stock_steer_request, CS.stock_steer_set_me_x00, CS.stock_steer_set_me_x00_2, CS.stock_steer_steer_torque, 
+              CS.lkas_hud_solid_lanes, CS.lkas_hud_steering_required, CS.lkas_hud_GERNBY3, CS.lkas_hud_GERNBY4, CS.lkas_hud_dashed_lanes, CS.v_ego_raw,
+              CS.lane11,CS.lane12,CS.lane13,CS.lane14,CS.lane15,CS.lane16,CS.lane17,CS.lane31,CS.lane32,CS.lane33,CS.lane34,CS.lane35,CS.lane36,CS.lane37,
+              CS.lane51,CS.lane52,CS.lane53,CS.lane54,CS.lane55,CS.lane56,CS.lane57,CS.lane71,CS.lane72,CS.lane73,CS.lane74,CS.lane75,CS.lane76,CS.lane77,
+              self.stock_lane_center,protect_hard,100*min_steer_limit,100*OP_STEER_AT_STOCK_LANE_CENTER,lane_diff_1,lane_diff_2,cross_diff,orig_apply_steer, 
+              CS.angle_steers, CS.angle_steers_rate, self.avg_lane_limit, frame, self.avg_lane_center, self.sample_count, apply_steer, CS.steer_torque_driver, 
+              self.stock_lane_limit * 100, int(time.time() * 1000000000)))
+              
+    elif len(self.steerData) > 3000 and (frame % 10) == 5:
       self.steerpub.send(self.steerData)
       self.steerData = ""
 
@@ -261,10 +263,8 @@ class CarController(object):
           can_sends.append(hondacan.spam_lkas_command(self.packer, CruiseSettings.LKAS, idx))
       elif CS.new_cruise_target_speed > 0 and (frame % 50) <= 20:
         if enabled and CS.new_cruise_target_speed < CS.v_cruise_pcm:
-          #print(CS.v_cruise_pcm, CS.new_cruise_target_speed)
           can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.DECEL_SET, idx))
         elif enabled and CS.new_cruise_target_speed > CS.v_cruise_pcm:
-          #print(CS.v_cruise_pcm, CS.new_cruise_target_speed)
           can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
         elif CS.new_cruise_target_speed == CS.v_cruise_pcm:
           CS.new_cruise_target_speed = 0
