@@ -243,7 +243,7 @@ class CarController(object):
               CS.angle_steers, CS.angle_steers_rate, self.avg_lane_limit, frame, self.avg_lane_center, self.sample_count, apply_steer, CS.steer_torque_driver, 
               self.stock_lane_limit * 100, int(time.time() * 1000000000)))
               
-    elif len(self.steerData) > 3000 and (frame % 10) == 5:
+    elif len(self.steerData) > 10 and (frame % 10) == 5:
       self.steerpub.send(self.steerData)
       self.steerData = ""
 
