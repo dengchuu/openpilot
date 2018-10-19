@@ -85,30 +85,42 @@ def get_can_signals(CP):
                 ("PARM_2", "CUR_LANE_LEFT_1", 1),
                 ("PARM_3", "CUR_LANE_LEFT_1", 1),
                 ("PARM_4", "CUR_LANE_LEFT_1", 2),
-                ("PARM_5", "CUR_LANE_LEFT_2", 1),
+                ("PARM_5", "CUR_LANE_LEFT_1", 1),
                 ("PARM_6", "CUR_LANE_LEFT_2", 1),
                 ("PARM_7", "CUR_LANE_LEFT_2", 1),
+                ("PARM_8", "CUR_LANE_LEFT_2", 1),
+                ("PARM_9", "CUR_LANE_LEFT_2", 1),
+                ("PARM_10", "CUR_LANE_LEFT_2", 1),
                 ("PARM_1", "CUR_LANE_RIGHT_1", 2),
                 ("PARM_2", "CUR_LANE_RIGHT_1", 1),
                 ("PARM_3", "CUR_LANE_RIGHT_1", 1),
                 ("PARM_4", "CUR_LANE_RIGHT_1", 2),
-                ("PARM_5", "CUR_LANE_RIGHT_2", 1),
+                ("PARM_5", "CUR_LANE_RIGHT_1", 1),
                 ("PARM_6", "CUR_LANE_RIGHT_2", 1),
                 ("PARM_7", "CUR_LANE_RIGHT_2", 1),
+                ("PARM_8", "CUR_LANE_RIGHT_2", 1),
+                ("PARM_9", "CUR_LANE_RIGHT_2", 1),
+                ("PARM_10", "CUR_LANE_RIGHT_2", 1),
                 ("PARM_1", "ADJ_LANE_LEFT_1", 2),
                 ("PARM_2", "ADJ_LANE_LEFT_1", 1),
                 ("PARM_3", "ADJ_LANE_LEFT_1", 1),
                 ("PARM_4", "ADJ_LANE_LEFT_1", 2),
-                ("PARM_5", "ADJ_LANE_LEFT_2", 1),
+                ("PARM_5", "ADJ_LANE_LEFT_1", 1),
                 ("PARM_6", "ADJ_LANE_LEFT_2", 1),
                 ("PARM_7", "ADJ_LANE_LEFT_2", 1),
+                ("PARM_8", "ADJ_LANE_LEFT_2", 1),
+                ("PARM_9", "ADJ_LANE_LEFT_2", 1),
+                ("PARM_10", "ADJ_LANE_LEFT_2", 1),
                 ("PARM_1", "ADJ_LANE_RIGHT_1", 2),
                 ("PARM_2", "ADJ_LANE_RIGHT_1", 1),
                 ("PARM_3", "ADJ_LANE_RIGHT_1", 1),
                 ("PARM_4", "ADJ_LANE_RIGHT_1", 2),
-                ("PARM_5", "ADJ_LANE_RIGHT_2", 1),
+                ("PARM_5", "ADJ_LANE_RIGHT_1", 1),
                 ("PARM_6", "ADJ_LANE_RIGHT_2", 1),
                 ("PARM_7", "ADJ_LANE_RIGHT_2", 1),
+                ("PARM_8", "ADJ_LANE_RIGHT_2", 1),
+                ("PARM_9", "ADJ_LANE_RIGHT_2", 1),
+                ("PARM_10", "ADJ_LANE_RIGHT_2", 1),
                 ("GERNBY1","RADAR_HUD", 0),
                 ("GERNBY2","RADAR_HUD", 0),
                 ("GERNBY3","RADAR_HUD", 0),
@@ -335,30 +347,42 @@ class CarState(object):
       self.lane12 = cp.vl["CUR_LANE_LEFT_1"]["PARM_2"]
       self.lane13 = cp.vl["CUR_LANE_LEFT_1"]["PARM_3"]
       self.lane14 = cp.vl["CUR_LANE_LEFT_1"]["PARM_4"]
-      self.lane15 = cp.vl["CUR_LANE_LEFT_2"]["PARM_5"]
+      self.lane15 = cp.vl["CUR_LANE_LEFT_1"]["PARM_5"]
       self.lane16 = cp.vl["CUR_LANE_LEFT_2"]["PARM_6"]
       self.lane17 = cp.vl["CUR_LANE_LEFT_2"]["PARM_7"]
+      self.lane18 = cp.vl["CUR_LANE_LEFT_2"]["PARM_8"]
+      self.lane19 = cp.vl["CUR_LANE_LEFT_2"]["PARM_9"]
+      self.lane1A = cp.vl["CUR_LANE_LEFT_2"]["PARM_10"]
       self.lane31 = cp.vl["CUR_LANE_RIGHT_1"]["PARM_1"]
       self.lane32 = cp.vl["CUR_LANE_RIGHT_1"]["PARM_2"]
       self.lane33 = cp.vl["CUR_LANE_RIGHT_1"]["PARM_3"]
       self.lane34 = cp.vl["CUR_LANE_RIGHT_1"]["PARM_4"]
-      self.lane35 = cp.vl["CUR_LANE_RIGHT_2"]["PARM_5"]
+      self.lane35 = cp.vl["CUR_LANE_RIGHT_1"]["PARM_5"]
       self.lane36 = cp.vl["CUR_LANE_RIGHT_2"]["PARM_6"]
       self.lane37 = cp.vl["CUR_LANE_RIGHT_2"]["PARM_7"]
+      self.lane38 = cp.vl["CUR_LANE_RIGHT_2"]["PARM_8"]
+      self.lane39 = cp.vl["CUR_LANE_RIGHT_2"]["PARM_9"]
+      self.lane3A = cp.vl["CUR_LANE_RIGHT_2"]["PARM_10"]
       self.lane51 = cp.vl["ADJ_LANE_LEFT_1"]["PARM_1"]
       self.lane52 = cp.vl["ADJ_LANE_LEFT_1"]["PARM_2"]
       self.lane53 = cp.vl["ADJ_LANE_LEFT_1"]["PARM_3"]
       self.lane54 = cp.vl["ADJ_LANE_LEFT_1"]["PARM_4"]
-      self.lane55 = cp.vl["ADJ_LANE_LEFT_2"]["PARM_5"]
+      self.lane55 = cp.vl["ADJ_LANE_LEFT_1"]["PARM_5"]
       self.lane56 = cp.vl["ADJ_LANE_LEFT_2"]["PARM_6"]
       self.lane57 = cp.vl["ADJ_LANE_LEFT_2"]["PARM_7"]
+      self.lane58 = cp.vl["ADJ_LANE_LEFT_2"]["PARM_8"]
+      self.lane59 = cp.vl["ADJ_LANE_LEFT_2"]["PARM_9"]
+      self.lane5A = cp.vl["ADJ_LANE_LEFT_2"]["PARM_10"]
       self.lane71 = cp.vl["ADJ_LANE_RIGHT_1"]["PARM_1"]
       self.lane72 = cp.vl["ADJ_LANE_RIGHT_1"]["PARM_2"]
       self.lane73 = cp.vl["ADJ_LANE_RIGHT_1"]["PARM_3"]
       self.lane74 = cp.vl["ADJ_LANE_RIGHT_1"]["PARM_4"]
-      self.lane75 = cp.vl["ADJ_LANE_RIGHT_2"]["PARM_5"]
+      self.lane75 = cp.vl["ADJ_LANE_RIGHT_1"]["PARM_5"]
       self.lane76 = cp.vl["ADJ_LANE_RIGHT_2"]["PARM_6"]
       self.lane77 = cp.vl["ADJ_LANE_RIGHT_2"]["PARM_7"]
+      self.lane78 = cp.vl["ADJ_LANE_RIGHT_2"]["PARM_8"]
+      self.lane79 = cp.vl["ADJ_LANE_RIGHT_2"]["PARM_9"]
+      self.lane7A = cp.vl["ADJ_LANE_RIGHT_2"]["PARM_10"]
 
       self.stock_steer_request = cp.vl["STEERING_CONTROL"]["STEER_TORQUE_REQUEST"]
       self.stock_steer_set_me_x00 = cp.vl["STEERING_CONTROL"]["GERNBY1"]

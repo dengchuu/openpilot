@@ -103,8 +103,8 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
     #'SET_ME_X48': 0x48,
     #'GERNBY1': hud.gernby1,
     #'GERNBY2': hud.gernby2,
-    #'GERNBY3': 0x41, #hud.gernby3,
-    #'GERNBY4': 0x48, #hud.gernby4,
+    'GERNBY3': 0x41, #hud.gernby3,
+    'GERNBY4': 0x48, #hud.gernby4,
     #'LKAS_OFF': hud.LKAS_OFF,
     #'STEERING_REQUIRED': hud.steer_required,
     'SOLID_LANES': hud.lanes,
@@ -126,10 +126,10 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
   else:  #if car_fingerprint in (CAR.ACCORD):
     radar_hud_values = {
       'GERNBY1': hud.r_hud_speed,
-      #'GERNBY3': 1,
-      #'GERNBY5': 0,
-      #'ACC_ALERTS': 0,
-      #'LEAD_DISTANCE': 0x1e,
+      'GERNBY3': 1,
+      'GERNBY5': 0,
+      'ACC_ALERTS': 0,
+      'LEAD_DISTANCE': 0x1e,
     }
     commands.append(packer.make_can_msg('RADAR_HUD', 0, radar_hud_values, idx))
   return commands
