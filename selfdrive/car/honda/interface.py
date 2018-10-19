@@ -10,7 +10,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, get_events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.honda.carstate import CarState, get_can_parser
-from selfdrive.car.honda.values import CruiseButtons, CM, BP, AH, CAR, HONDA_BOSCH, CruiseSetting
+from selfdrive.car.honda.values import CruiseButtons, CM, BP, AH, CAR, HONDA_BOSCH, CruiseSettings
 from selfdrive.controls.lib.planner import A_ACC_MAX
 
 try:
@@ -470,7 +470,7 @@ class CarInterface(object):
       else:
         be.pressed = False
         but = self.CS.prev_cruise_setting
-      if but == CruiseSetting.LKAS:
+      if but == CruiseSettings.LKAS:
         be.type = 'altButton1'
         #if be.pressed == False:
           #self.CC.auto_Steer = not self.CC.auto_Steer 

@@ -175,7 +175,7 @@ class CarController(object):
     OP_STEER_AT_STOCK_LANE_CENTER = 0.333
     STOCK_FILTER_WIDTH = 15.
     force_zmq_send = False
-    MAX_STEERING_SAMPLES = int(20000. / (CS.v_ego_raw + 1))
+    MAX_STEERING_SAMPLES = int(2000. / (CS.v_ego_raw + 1))
     speed_factored_average = int(500 / (CS.v_ego_raw + 1))
     
     if False == False:
@@ -220,7 +220,7 @@ class CarController(object):
       
     #self.avg_apply_steer = ((speed_factored_average * self.avg_apply_steer) + apply_steer) / (speed_factored_average + 1)
     if CS.stock_steer_steer_torque != 0:          
-      apply_steer = int(clip(1.1 * CS.stock_steer_steer_torque, -STEER_MAX, STEER_MAX))
+      apply_steer = int(clip(1.15 * CS.stock_steer_steer_torque, -STEER_MAX, STEER_MAX))
       lkas_active = int(CS.stock_steer_request)
 
     #if CS.blinker_on or not self.auto_Steer or (CS.steer_override and \
