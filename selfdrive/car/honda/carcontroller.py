@@ -184,11 +184,14 @@ class CarController(object):
         
         self.sample_count = min(MAX_STEERING_SAMPLES, self.sample_count + 1.)
 
-        total_lane_confidence = (CS.lane13 + CS.lane33 + CS.lane53 + CS.lane73) 
-        
-        self.stock_lane_center = ((CS.lane11 * CS.lane13) + (CS.lane31 * CS.lane33) + (CS.lane51 * CS.lane53) + (CS.lane71 * CS.lane73)) / total_lane_confidence
+        if CS.lane54 > CS.lane74:
+          total_lane_confidence = (CS.lane14 + CS.lane34 + CS.lane54) 
+          self.stock_lane_center = ((CS.lane11 * CS.lane14) + (CS.lane31 * CS.lane34) + (CS.lane51 * CS.lane54)) / total_lane_confidence
+        else:
+          total_lane_confidence = (CS.lane14 + CS.lane34 + CS.lane74) 
+          self.stock_lane_center = ((CS.lane11 * CS.lane14) + (CS.lane31 * CS.lane34) + (CS.lane71 * CS.lane74)) / total_lane_confidence
 
-        if (CS.lane13 + CS.lane53) > (CS.lane33 + CS.lane73) and actuators.steer < 0:
+        if (CS.lane14 + CS.lane54) > (CS.lane34 + CS.lane74) and actuators.steer < 0:
           #OP steer direction favors strong lane confidence
           min_steer_limit = 0.2
         else:
