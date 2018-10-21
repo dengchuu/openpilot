@@ -193,9 +193,9 @@ class CarController(object):
 
         if (CS.lane14 + CS.lane54) > (CS.lane34 + CS.lane74) and actuators.steer < 0:
           #OP steer direction favors strong lane confidence
-          min_steer_limit = 0.2
+          min_steer_limit = 0.3
         else:
-          min_steer_limit = 0.0
+          min_steer_limit = 0.2
 
         if actuators.steer > 0 and self.avg_lane_center < 0:
           # OP agrees with stock lane orientation
@@ -219,7 +219,7 @@ class CarController(object):
       apply_steer = orig_apply_steer
       
     if CS.stock_steer_steer_torque != 0:          
-      apply_steer = int(clip(1.15 * CS.stock_steer_steer_torque, -STEER_MAX, STEER_MAX))
+      apply_steer = int(clip(1.12 * CS.stock_steer_steer_torque, -STEER_MAX, STEER_MAX))
       lkas_active = int(CS.stock_steer_request)
 
     if CS.blinker_on or not self.auto_Steer or (CS.steer_override and (apply_steer < 0) == (CS.steer_torque_driver < 0)):
