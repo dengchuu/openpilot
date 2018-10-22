@@ -384,6 +384,14 @@ class CarState(object):
       self.lane79 = cp.vl["ADJ_LANE_RIGHT_2"]["PARM_9"]
       self.lane7A = cp.vl["ADJ_LANE_RIGHT_2"]["PARM_10"]
 
+      self.total_lane_confidence = (CS.lane14 + CS.lane34 + CS.lane54 + CS.lane74) 
+      if total_lane_confidence > 0:
+        self.stock_lane_center = (((CS.lane11 * CS.lane14) + (CS.lane31 * CS.lane34) + (CS.lane51 * CS.lane54) + (CS.lane71 * CS.lane74)) / total_lane_confidence)
+        self.stock_lane_curvature = (((CS.lane17 * CS.lane14) + (CS.lane37 * CS.lane34) + (CS.lane57 * CS.lane54) + (CS.lane77 * CS.lane74)) / total_lane_confidence)
+      else:
+        self.stock_lane_center = 0
+        self.stock_lane_curvature = 0
+
       self.stock_steer_request = cp.vl["STEERING_CONTROL"]["STEER_TORQUE_REQUEST"]
       self.stock_steer_set_me_x00 = cp.vl["STEERING_CONTROL"]["GERNBY1"]
       self.stock_steer_set_me_x00_2 = cp.vl["STEERING_CONTROL"]["GERNBY2"]
