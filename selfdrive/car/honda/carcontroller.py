@@ -226,7 +226,7 @@ class CarController(object):
       
     steer_amplifier = 1
     if CS.stock_steer_steer_torque != 0:
-      steer_amplifier = 1 + (abs(self.avg_lane_curvature - self.avg_steer_angle) / 100) + (abs(self.avg_lane_center) / 100)
+      steer_amplifier = 1 + (abs(self.avg_lane_curvature - self.avg_steer_angle) / 150) + (abs(self.avg_lane_center) / 150)
       #if abs(self.avg_lane_curvature - self.avg_steer_angle) >= 2:
       #  steer_amplifier = 1.2
       #elif abs(self.avg_lane_curvature - self.avg_steer_angle) >= 1:
