@@ -180,7 +180,7 @@ class CarController(object):
     MAX_STEERING_SAMPLES = int(2000. / (CS.v_ego_raw + 1))
     speed_factored_average = int(500 / (CS.v_ego_raw + 1))
     
-    if False == False:
+    if False == True:
 
       if (CS.lane14 + CS.lane34 + CS.lane54 + CS.lane74) > 0:
             
@@ -193,7 +193,7 @@ class CarController(object):
         self.stock_lane_curvature = (((CS.lane17 * CS.lane14) + (CS.lane37 * CS.lane34) + (CS.lane57 * CS.lane54) + (CS.lane77 * CS.lane74)) / total_lane_confidence)
         self.avg_lane_center = ((100 * self.avg_lane_center) + self.stock_lane_center) / (101)
         self.avg_lane_curvature = ((100 * self.avg_lane_curvature) + self.stock_lane_curvature) / (101)
-        self.avg_steer_angle = ((100 * self.avg_steer_angle) + (20 * CS.angle_steers) - 20) / (101)
+        self.avg_steer_angle = ((100 * self.avg_steer_angle) + (20 * CS.angle_steers)) / (101)
         self.avg_steer_error = ((10000 * self.avg_steer_error) + (self.avg_lane_curvature - self.avg_steer_angle)) / 10001
 
         if (CS.lane14 + CS.lane54) > (CS.lane34 + CS.lane74) and actuators.steer < 0:
@@ -224,21 +224,21 @@ class CarController(object):
     else:
       apply_steer = orig_apply_steer
       
-    steer_amplifier = 1
-    if CS.stock_steer_steer_torque != 0:
-      steer_amplifier = 1 + (abs(self.avg_lane_curvature - self.avg_steer_angle) / 150) + (abs(self.avg_lane_center) / 150)
+    #steer_amplifier = 1
+    #if CS.stock_steer_steer_torque != 0:
+    #  steer_amplifier = 1 + (abs(self.avg_lane_curvature - self.avg_steer_angle) / 150) + (abs(self.avg_lane_center) / 150)
       #if abs(self.avg_lane_curvature - self.avg_steer_angle) >= 2:
       #  steer_amplifier = 1.2
       #elif abs(self.avg_lane_curvature - self.avg_steer_angle) >= 1:
       #  steer_amplifier = 1.1
       #steer_amplifier = abs(self.avg_lane_curvature / self.avg_steer_angle)       
-      apply_steer = int(clip(steer_amplifier * CS.stock_steer_steer_torque, -STEER_MAX, STEER_MAX))
-      lkas_active = int(CS.stock_steer_request)
-    elif self.stock_online and (self.avg_lane_curvature - self.avg_steer_angle) <= 0 == apply_steer < 0:
-      apply_steer = int(clip(-actuators.steer * STEER_MAX * .2, -STEER_MAX * self.stock_lane_limit, STEER_MAX * self.stock_lane_limit))
+    #  apply_steer = int(clip(steer_amplifier * CS.stock_steer_steer_torque, -STEER_MAX, STEER_MAX))
+    #  lkas_active = int(CS.stock_steer_request)
+    #elif self.stock_online and (self.avg_lane_curvature - self.avg_steer_angle) <= 0 == apply_steer < 0:
+    #  apply_steer = int(clip(-actuators.steer * STEER_MAX * .2, -STEER_MAX * self.stock_lane_limit, STEER_MAX * self.stock_lane_limit))
       #apply_steer = 0
-    else:
-      apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX * self.stock_lane_limit, STEER_MAX * self.stock_lane_limit))
+    #else:
+    #  apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX * self.stock_lane_limit, STEER_MAX * self.stock_lane_limit))
 
 
     if CS.blinker_on or not self.auto_Steer or (CS.steer_override and (apply_steer < 0) == (CS.steer_torque_driver < 0)):

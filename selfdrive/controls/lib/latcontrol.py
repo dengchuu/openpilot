@@ -1,5 +1,7 @@
+import zmq
 import math
 import numpy as np
+import time
 from selfdrive.controls.lib.pid import PIController
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
@@ -48,6 +50,11 @@ class LatControl(object):
     self.angle_steers_des_mpc = 0.0
     self.angle_steers_des_prev = 0.0
     self.angle_steers_des_time = 0.0
+    self.context = zmq.Context()
+    self.steerpub = self.context.socket(zmq.PUB)
+    self.steerpub.bind("tcp://*:8594")
+    self.steerdata = ""
+    self.last_stock_suggestion = 0
 
   def reset(self):
     self.pid.reset()
@@ -55,8 +62,10 @@ class LatControl(object):
   def update(self, active, v_ego, angle_steers, steer_override, d_poly, angle_offset, VM, PL, stock_confidence, stock_steer_suggestion):
     cur_time = sec_since_boot()
     self.mpc_updated = False
+    my_desired_delta = 0
     # TODO: this creates issues in replay when rewinding time: mpc won't run
-    if self.last_mpc_ts < PL.last_md_ts:
+
+    if self.last_mpc_ts < PL.last_md_ts or (stock_confidence > 0 and self.last_stock_suggestion != stock_steer_suggestion):
       self.last_mpc_ts = PL.last_md_ts
       self.angle_steers_des_prev = self.angle_steers_des_mpc
 
@@ -73,29 +82,49 @@ class LatControl(object):
       self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                           l_poly, r_poly, p_poly,
                           PL.PP.l_prob, PL.PP.r_prob, PL.PP.p_prob, curvature_factor, v_ego_mpc, PL.PP.lane_width)
-
       # reset to current steer angle if not active or overriding
       if active:
         delta_desired = self.mpc_solution[0].delta[1]
       else:
         delta_desired = math.radians(angle_steers - angle_offset) / VM.CP.steerRatio
 
-      self.cur_state[0].delta = delta_desired
-
-      self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.CP.steerRatio) + angle_offset)
+      my_desired_delta = math.radians(stock_steer_suggestion) / VM.CP.steerRatio
+      
+      if stock_confidence == 0:
+        self.cur_state[0].delta = delta_desired
+        self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.CP.steerRatio) + angle_offset)
+      else:
+        self.cur_state[0].delta = my_desired_delta
+        self.mpc_solution[0].delta[1] = my_desired_delta
+        self.angle_steers_des_mpc = float(math.degrees(my_desired_delta * VM.CP.steerRatio))
+        
       self.angle_steers_des_time = cur_time
       self.mpc_updated = True
+
+      self.last_stock_suggestion = stock_steer_suggestion
 
       #  Check for infeasable MPC solution
       self.mpc_nans = np.any(np.isnan(list(self.mpc_solution[0].delta)))
       t = sec_since_boot()
-      if self.mpc_nans:
+      if self.mpc_nans and stock_confidence == 0:
         self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, VM.CP.steerRateCost)
         self.cur_state[0].delta = math.radians(angle_steers) / VM.CP.steerRatio
 
         if t > self.last_cloudlog_t + 5.0:
           self.last_cloudlog_t = t
           cloudlog.warning("Lateral mpc - nan: True")
+      
+      self.steerdata = ("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d" % (my_desired_delta, delta_desired, angle_offset, self.angle_steers_des_mpc, PL.PP.l_prob, PL.PP.r_prob, PL.PP.p_prob, l_poly[0], l_poly[1], l_poly[2], l_poly[3], r_poly[0], r_poly[1], r_poly[2], r_poly[3], p_poly[0], p_poly[1], p_poly[2], p_poly[3], v_ego, int(time.time() * 1000000000)))
+      #print (my_desired_delta, delta_desired)
+    elif self.steerdata != "":
+      self.steerpub.send(self.steerdata)
+      self.steerdata = ""
+          
+    #elif stock_confidence > 0:
+    #  self.last_mpc_ts = PL.last_md_ts
+    #  self.angle_steers_des_prev = self.angle_steers_des_mpc
+    #  self.angle_steers_des_mpc = stock_steer_suggestion
+    #  delta_desired = 0 
 
     if v_ego < 0.3 or not active:
       output_steer = 0.0
@@ -114,7 +143,6 @@ class LatControl(object):
         steer_feedforward *= v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
       deadzone = 0.0
 
-      print(self.angle_steers_des, stock_steer_suggestion)
       output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=steer_override,
                                      feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
 
