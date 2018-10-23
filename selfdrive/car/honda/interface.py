@@ -407,7 +407,7 @@ class CarInterface(object):
     ret.steeringAngle = self.CS.angle_steers
     ret.steeringRate = self.CS.angle_steers_rate
     ret.stockConfidence = self.CS.total_lane_confidence
-    ret.stockSteerSuggestion = float(self.CS.stock_lane_curvature) / 10. #(6.28)
+    ret.stockSteerSuggestion = float(self.CS.stock_lane_curvature) / 20. #(6.28)
 
     # gear shifter lever
     ret.gearShifter = self.CS.gear_shifter
