@@ -65,7 +65,7 @@ class LatControl(object):
     my_desired_delta = 0
     # TODO: this creates issues in replay when rewinding time: mpc won't run
 
-    if (stock_confidence == 0 and self.last_mpc_ts < PL.last_md_ts) or (stock_confidence > 0 and self.last_stock_suggestion != stock_steer_suggestion):
+    if self.last_mpc_ts < PL.last_md_ts:  #) or (stock_confidence > 0 and self.last_stock_suggestion != stock_steer_suggestion):
       self.last_mpc_ts = PL.last_md_ts
       self.angle_steers_des_prev = self.angle_steers_des_mpc
 
@@ -90,18 +90,18 @@ class LatControl(object):
 
       my_desired_delta = math.radians(stock_steer_suggestion - angle_offset) / VM.CP.steerRatio
       
-      if stock_confidence == 0:
-        self.cur_state[0].delta = delta_desired
-        self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.CP.steerRatio) + angle_offset)
-      else:
-        self.cur_state[0].delta = my_desired_delta
-        self.mpc_solution[0].delta[1] = my_desired_delta
-        self.angle_steers_des_mpc = float(math.degrees(my_desired_delta * VM.CP.steerRatio) + angle_offset)
+      #if stock_confidence == 0:
+      self.cur_state[0].delta = delta_desired
+      self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.CP.steerRatio) + angle_offset)
+      #else:
+      #  self.cur_state[0].delta = my_desired_delta
+      #  self.mpc_solution[0].delta[1] = my_desired_delta
+      #  self.angle_steers_des_mpc = float(math.degrees(my_desired_delta * VM.CP.steerRatio) + angle_offset)
         
       self.angle_steers_des_time = cur_time
       self.mpc_updated = True
 
-      self.last_stock_suggestion = stock_steer_suggestion
+      #self.last_stock_suggestion = stock_steer_suggestion
 
       #  Check for infeasable MPC solution
       self.mpc_nans = np.any(np.isnan(list(self.mpc_solution[0].delta)))
@@ -116,7 +116,7 @@ class LatControl(object):
       
       self.steerdata = ("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d" % (my_desired_delta, delta_desired, angle_offset, self.angle_steers_des_mpc, PL.PP.l_prob, PL.PP.r_prob, PL.PP.p_prob, l_poly[0], l_poly[1], l_poly[2], l_poly[3], r_poly[0], r_poly[1], r_poly[2], r_poly[3], p_poly[0], p_poly[1], p_poly[2], p_poly[3], v_ego, int(time.time() * 1000000000)))
       #print (my_desired_delta, delta_desired)
-    #elif self.steerdata != "":
+    elif self.steerdata != "":
       self.steerpub.send(self.steerdata)
       self.steerdata = ""
           

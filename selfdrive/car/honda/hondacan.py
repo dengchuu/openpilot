@@ -73,8 +73,9 @@ def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, i
   bus = 2 if car_fingerprint in HONDA_BOSCH else 0
   commands.append(packer.make_can_msg("STEERING_CONTROL", bus, values, idx)) 
   
-  spoof_steer = 1000 + (apply_steer * (.1 + (float(idx) / 10.)))
-  #commands.append(packer.make_can_msg("STEER_STATUS", 0, {'STEER_TORQUE_SENSOR': int(spoof_steer)}, idx))
+  #spoof_steer = 1000 + (apply_steer * (.1 + (float(idx) / 10.)))
+  spoof_steer = apply_steer * 0.5
+  commands.append(packer.make_can_msg("STEER_STATUS", 0, {'STEER_TORQUE_SENSOR': int(spoof_steer)}, idx))
   return commands
 
 def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):

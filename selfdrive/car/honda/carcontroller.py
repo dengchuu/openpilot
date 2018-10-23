@@ -158,7 +158,7 @@ class CarController(object):
     elif CS.CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX):
       STEER_MAX = 0x3e8  # CR-V only uses 12-bits and requires a lower value (max value from energee)
     else:
-      STEER_MAX = 0x1000
+      STEER_MAX = 0x1200
 
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_gas = clip(actuators.gas, 0., 1.)
@@ -180,7 +180,7 @@ class CarController(object):
     MAX_STEERING_SAMPLES = int(2000. / (CS.v_ego_raw + 1))
     speed_factored_average = int(500 / (CS.v_ego_raw + 1))
     
-    if False == True:
+    if False == False:
 
       if (CS.lane14 + CS.lane34 + CS.lane54 + CS.lane74) > 0:
             
@@ -223,7 +223,7 @@ class CarController(object):
 
     else:
       apply_steer = orig_apply_steer
-      
+    
     #steer_amplifier = 1
     #if CS.stock_steer_steer_torque != 0:
     #  steer_amplifier = 1 + (abs(self.avg_lane_curvature - self.avg_steer_angle) / 150) + (abs(self.avg_lane_center) / 150)
@@ -233,16 +233,17 @@ class CarController(object):
       #  steer_amplifier = 1.1
       #steer_amplifier = abs(self.avg_lane_curvature / self.avg_steer_angle)       
     #  apply_steer = int(clip(steer_amplifier * CS.stock_steer_steer_torque, -STEER_MAX, STEER_MAX))
+    #  apply_steer = CS.stock_steer_steer_torque
     #  lkas_active = int(CS.stock_steer_request)
     #elif self.stock_online and (self.avg_lane_curvature - self.avg_steer_angle) <= 0 == apply_steer < 0:
     #  apply_steer = int(clip(-actuators.steer * STEER_MAX * .2, -STEER_MAX * self.stock_lane_limit, STEER_MAX * self.stock_lane_limit))
-      #apply_steer = 0
+     #apply_steer = 0
     #else:
     #  apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX * self.stock_lane_limit, STEER_MAX * self.stock_lane_limit))
 
 
-    #if CS.blinker_on or not self.auto_Steer or (CS.steer_override and (apply_steer < 0) == (CS.steer_torque_driver < 0)):
-    #  apply_steer = 0
+    if CS.blinker_on or not self.auto_Steer or (CS.steer_override and (apply_steer < 0) == (CS.steer_torque_driver < 0)):
+      apply_steer = 0
 
     # Send CAN commands.
     can_sends = []
@@ -253,6 +254,7 @@ class CarController(object):
     can_sends.extend(hondacan.create_steering_control(self.packer, int(apply_steer), lkas_active, CS.CP.carFingerprint, idx))
 
     if (frame % 10) == 0:
+      print(CS.stock_steer_steer_torque)
       #print(int(self.stock_lane_center), int(self.stock_lane_curvature), int(self.avg_lane_center), int(self.avg_lane_curvature), int(self.avg_steer_angle), int(self.avg_steer_error))
       self.steerData += ('%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d|' \
               % (CS.lane11,CS.lane12,CS.lane13,CS.lane14,CS.lane15,CS.lane16,CS.lane17,CS.lane18,CS.lane19,CS.lane1A,

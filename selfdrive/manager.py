@@ -85,7 +85,7 @@ from selfdrive.loggerd.config import ROOT
 managed_processes = {
   "thermald": "selfdrive.thermald",
   "uploader": "selfdrive.loggerd.uploader",
-  "controlsd": "selfdrive.controls.controlsd",
+  #"controlsd": "selfdrive.controls.controlsd",
   "radard": "selfdrive.controls.radard",
   "ubloxd": "selfdrive.locationd.ubloxd",
   "loggerd": ("selfdrive/loggerd", ["./loggerd"]),
@@ -127,7 +127,7 @@ persistent_processes = [
 ]
 
 car_started_processes = [
-  'controlsd',
+  #'controlsd',
   'loggerd',
   'sensord',
   'radard',
@@ -269,12 +269,12 @@ def manager_init(should_register=True):
   os.environ['DONGLE_ID'] = dongle_id
 
   cloudlog.info("dirty is %d" % dirty)
-  if not dirty:
-    os.environ['CLEAN'] = '1'
+  #if not dirty:
+  #  os.environ['CLEAN'] = '1'
 
   cloudlog.bind_global(dongle_id=dongle_id, version=version, dirty=dirty, is_eon=True)
-  crash.bind_user(id=dongle_id)
-  crash.bind_extra(version=version, dirty=dirty, is_eon=True)
+  #crash.bind_user(id=dongle_id)
+  #crash.bind_extra(version=version, dirty=dirty, is_eon=True)
 
   os.umask(0)
   try:
