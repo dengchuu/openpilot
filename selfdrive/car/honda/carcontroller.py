@@ -150,15 +150,18 @@ class CarController(object):
 #      hud = HUDData(0xc6, 255, 64, 0xc0, 209, 0x40, 0, 0, 0, 0, 0, int(max(1023, CS.v_ego_raw *20)))
 
     # **** process the car messages ****
-
+    
+    
     # *** compute control surfaces ***
     BRAKE_MAX = 1024/4
     if CS.CP.carFingerprint in (CAR.ACURA_ILX):
       STEER_MAX = 0xF00
     elif CS.CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX):
       STEER_MAX = 0x3e8  # CR-V only uses 12-bits and requires a lower value (max value from energee)
+    elif abs(actuators.steerAngle - 1) > abs(CS.angle_steers - 1) and actuators.steerAngle * CS.angle_steers >= 0:
+      STEER_MAX = 0x1000 + 0x500 * abs(CS.angle_steers - 1)
     else:
-      STEER_MAX = 0x1200
+      STEER_MAX = 0x800
 
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_gas = clip(actuators.gas, 0., 1.)
@@ -182,13 +185,13 @@ class CarController(object):
     
     if False == False:
 
-      if (CS.lane14 + CS.lane34 + CS.lane54 + CS.lane74) > 0:
+      if CS.lane14 > 0 or CS.lane34 > 0:
             
         self.stock_online = True
         
         self.sample_count = min(MAX_STEERING_SAMPLES, self.sample_count + 1.)
 
-        total_lane_confidence = (CS.lane14 + CS.lane34 + CS.lane54 + CS.lane74) 
+        total_lane_confidence = int(CS.lane14 + CS.lane34 + CS.lane54 + CS.lane74) 
         self.stock_lane_center = (((CS.lane11 * CS.lane14) + (CS.lane31 * CS.lane34) + (CS.lane51 * CS.lane54) + (CS.lane71 * CS.lane74)) / total_lane_confidence)
         self.stock_lane_curvature = (((CS.lane17 * CS.lane14) + (CS.lane37 * CS.lane34) + (CS.lane57 * CS.lane54) + (CS.lane77 * CS.lane74)) / total_lane_confidence)
         self.avg_lane_center = ((100 * self.avg_lane_center) + self.stock_lane_center) / (101)
@@ -202,12 +205,12 @@ class CarController(object):
         else:
           min_steer_limit = 0.2
 
-        if actuators.steer > 0 and self.avg_lane_center < 0:
+        #if actuators.steer > 0 and self.stock_lane_center < 0:
           # OP agrees with stock lane orientation
-          self.stock_lane_limit = min(1., OP_STEER_AT_STOCK_LANE_CENTER + min(STOCK_FILTER_WIDTH, abs(self.avg_lane_center)) / STOCK_FILTER_WIDTH)
-        else:
+        #  self.stock_lane_limit = min(1., OP_STEER_AT_STOCK_LANE_CENTER + min(STOCK_FILTER_WIDTH, abs(self.stock_lane_center)) / STOCK_FILTER_WIDTH)
+        #else:
           # OP disagrees with stock lane orientation
-          self.stock_lane_limit = max(min_steer_limit, OP_STEER_AT_STOCK_LANE_CENTER - 1. + ((STOCK_FILTER_WIDTH - min(STOCK_FILTER_WIDTH, abs(self.avg_lane_center))) / STOCK_FILTER_WIDTH))
+        #  self.stock_lane_limit = max(min_steer_limit, OP_STEER_AT_STOCK_LANE_CENTER - 1. + ((STOCK_FILTER_WIDTH - min(STOCK_FILTER_WIDTH, abs(self.stock_lane_center))) / STOCK_FILTER_WIDTH))
                     
       else:
         self.stock_lane_center = 0
@@ -224,6 +227,8 @@ class CarController(object):
     else:
       apply_steer = orig_apply_steer
     
+    if lkas_active:
+      apply_steer = -(actuators.steerAngle + 1.) * 1000
     #steer_amplifier = 1
     #if CS.stock_steer_steer_torque != 0:
     #  steer_amplifier = 1 + (abs(self.avg_lane_curvature - self.avg_steer_angle) / 150) + (abs(self.avg_lane_center) / 150)
@@ -252,9 +257,9 @@ class CarController(object):
     idx = frame % 4
       
     can_sends.extend(hondacan.create_steering_control(self.packer, int(apply_steer), lkas_active, CS.CP.carFingerprint, idx))
-
+    self.max_stock_steer = max(self.max_stock_steer, abs(apply_steer), abs(CS.stock_steer_steer_torque))
     if (frame % 10) == 0:
-      print(CS.stock_steer_steer_torque)
+      print(int(actuators.steerAngle), int(CS.angle_steers), self.max_stock_steer, abs(apply_steer), abs(CS.stock_steer_steer_torque))
       #print(int(self.stock_lane_center), int(self.stock_lane_curvature), int(self.avg_lane_center), int(self.avg_lane_curvature), int(self.avg_steer_angle), int(self.avg_steer_error))
       self.steerData += ('%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d|' \
               % (CS.lane11,CS.lane12,CS.lane13,CS.lane14,CS.lane15,CS.lane16,CS.lane17,CS.lane18,CS.lane19,CS.lane1A,
