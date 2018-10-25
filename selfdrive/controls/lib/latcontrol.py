@@ -55,6 +55,7 @@ class LatControl(object):
     self.steerpub.bind("tcp://*:8594")
     self.steerdata = ""
 
+
   def reset(self):
     self.pid.reset()
 

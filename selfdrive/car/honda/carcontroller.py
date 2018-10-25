@@ -222,13 +222,17 @@ class CarController(object):
       if not self.stock_online:
         self.stock_lane_limit = self.avg_lane_limit
       
-      apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX * self.stock_lane_limit, STEER_MAX * self.stock_lane_limit))
+      self.apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX * self.stock_lane_limit, STEER_MAX * self.stock_lane_limit))
 
     else:
-      apply_steer = orig_apply_steer
+      self.apply_steer = orig_apply_steer
     
     if lkas_active:
-      apply_steer = -(actuators.steerAngle + 1.) * 1000
+      if abs(CS.angle_steers_rate) < (2 * actuators.steerAngle):
+        self.apply_steer = clip(-actuators.steerAngle * 1000, -0x7DFF, 0x7DFF)
+    else:
+      self.apply_steer = 0
+
     #steer_amplifier = 1
     #if CS.stock_steer_steer_torque != 0:
     #  steer_amplifier = 1 + (abs(self.avg_lane_curvature - self.avg_steer_angle) / 150) + (abs(self.avg_lane_center) / 150)
@@ -237,18 +241,18 @@ class CarController(object):
       #elif abs(self.avg_lane_curvature - self.avg_steer_angle) >= 1:
       #  steer_amplifier = 1.1
       #steer_amplifier = abs(self.avg_lane_curvature / self.avg_steer_angle)       
-    #  apply_steer = int(clip(steer_amplifier * CS.stock_steer_steer_torque, -STEER_MAX, STEER_MAX))
-    #  apply_steer = CS.stock_steer_steer_torque
+    #  self.apply_steer = int(clip(steer_amplifier * CS.stock_steer_steer_torque, -STEER_MAX, STEER_MAX))
+    #  self.apply_steer = CS.stock_steer_steer_torque
     #  lkas_active = int(CS.stock_steer_request)
-    #elif self.stock_online and (self.avg_lane_curvature - self.avg_steer_angle) <= 0 == apply_steer < 0:
-    #  apply_steer = int(clip(-actuators.steer * STEER_MAX * .2, -STEER_MAX * self.stock_lane_limit, STEER_MAX * self.stock_lane_limit))
-     #apply_steer = 0
+    #elif self.stock_online and (self.avg_lane_curvature - self.avg_steer_angle) <= 0 == self.apply_steer < 0:
+    #  self.apply_steer = int(clip(-actuators.steer * STEER_MAX * .2, -STEER_MAX * self.stock_lane_limit, STEER_MAX * self.stock_lane_limit))
+     #self.apply_steer = 0
     #else:
-    #  apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX * self.stock_lane_limit, STEER_MAX * self.stock_lane_limit))
+    #  self.apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX * self.stock_lane_limit, STEER_MAX * self.stock_lane_limit))
 
 
-    if CS.blinker_on or not self.auto_Steer or (CS.steer_override and (apply_steer < 0) == (CS.steer_torque_driver < 0)):
-      apply_steer = 0
+    if CS.blinker_on or not self.auto_Steer or (CS.steer_override and (self.apply_steer < 0) == (CS.steer_torque_driver < 0)):
+      self.apply_steer = 0
 
     # Send CAN commands.
     can_sends = []
@@ -256,17 +260,17 @@ class CarController(object):
     # Send steering command.
     idx = frame % 4
       
-    can_sends.extend(hondacan.create_steering_control(self.packer, int(apply_steer), lkas_active, CS.CP.carFingerprint, idx))
-    self.max_stock_steer = max(self.max_stock_steer, abs(apply_steer), abs(CS.stock_steer_steer_torque))
+    can_sends.extend(hondacan.create_steering_control(self.packer, int(self.apply_steer), lkas_active, CS.CP.carFingerprint, idx))
+    self.max_stock_steer = max(self.max_stock_steer, abs(self.apply_steer), abs(CS.stock_steer_steer_torque))
     if (frame % 10) == 0:
-      print(int(actuators.steerAngle), int(CS.angle_steers), self.max_stock_steer, abs(apply_steer), abs(CS.stock_steer_steer_torque))
+      print(int(actuators.steerAngle), int(CS.angle_steers), self.max_stock_steer, abs(self.apply_steer), abs(CS.stock_steer_steer_torque))
       #print(int(self.stock_lane_center), int(self.stock_lane_curvature), int(self.avg_lane_center), int(self.avg_lane_curvature), int(self.avg_steer_angle), int(self.avg_steer_error))
       self.steerData += ('%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d|' \
               % (CS.lane11,CS.lane12,CS.lane13,CS.lane14,CS.lane15,CS.lane16,CS.lane17,CS.lane18,CS.lane19,CS.lane1A,
               CS.lane31,CS.lane32,CS.lane33,CS.lane34,CS.lane35,CS.lane36,CS.lane37,CS.lane38,CS.lane39,CS.lane3A,
               CS.lane51,CS.lane52,CS.lane53,CS.lane54,CS.lane55,CS.lane56,CS.lane57,CS.lane58,CS.lane59,CS.lane5A,
               CS.lane71,CS.lane72,CS.lane73,CS.lane74,CS.lane75,CS.lane76,CS.lane77,CS.lane78,CS.lane79,CS.lane7A,
-              CS.angle_steers, CS.angle_steers_rate, apply_steer, CS.stock_steer_steer_torque, CS.steer_torque_driver, 
+              CS.angle_steers, CS.angle_steers_rate, self.apply_steer, CS.stock_steer_steer_torque, CS.steer_torque_driver, 
               int(self.stock_lane_center), int(self.stock_lane_curvature), int(self.avg_lane_center), int(self.avg_lane_curvature), int(self.avg_steer_angle), int(self.avg_steer_error),
               CS.lkas_hud_GERNBY1, CS.lkas_hud_GERNBY2, CS.lkas_hud_LKAS_PROBLEM, CS.lkas_hud_LKAS_OFF, CS.lkas_hud_LDW_RIGHT, CS.lkas_hud_BEEP, 
               CS.lkas_hud_LDW_ON, CS.lkas_hud_LDW_OFF, CS.lkas_hud_CLEAN_WINDSHIELD, CS.lkas_hud_DTC, CS.lkas_hud_CAM_TEMP_HIGH, CS.radar_hud_gernby1, 
