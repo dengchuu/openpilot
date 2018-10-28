@@ -180,8 +180,8 @@ class CarController(object):
     cross_diff = 0
     protect_hard = 0
     min_steer_limit = 0
-    OP_STEER_AT_STOCK_LANE_CENTER = 0.333
-    STOCK_FILTER_WIDTH = 15.
+    OP_STEER_AT_STOCK_LANE_CENTER = 0.75
+    STOCK_FILTER_WIDTH = 10.
     force_zmq_send = False
     MAX_STEERING_SAMPLES = int(2000. / (CS.v_ego_raw + 1))
     speed_factored_average = int(500 / (CS.v_ego_raw + 1))
@@ -204,11 +204,11 @@ class CarController(object):
 
         if (CS.lane14 + CS.lane54) > (CS.lane34 + CS.lane74) and actuators.steer < 0:
           #OP steer direction favors strong lane confidence
-          min_steer_limit = 0.3
+          min_steer_limit = 0.2
         else:
           min_steer_limit = 0.2
 
-        if actuators.steer > 0 and self.stock_lane_center < 0:
+        if actuators.steer < 0 and self.stock_lane_center < 0:
           # OP agrees with stock lane orientation
           self.stock_lane_limit = min(1., OP_STEER_AT_STOCK_LANE_CENTER + min(STOCK_FILTER_WIDTH, abs(self.stock_lane_center)) / STOCK_FILTER_WIDTH)
         else:
