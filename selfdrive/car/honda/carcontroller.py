@@ -169,7 +169,6 @@ class CarController(object):
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_gas = clip(actuators.gas, 0., 1.)
     apply_brake = int(clip(self.brake_last * BRAKE_MAX, 0, BRAKE_MAX - 1))
-    self.apply_steer = clip(STEER_MAX * -actuators.steer, -STEER_MAX, STEER_MAX)
 
     # any other cp.vl[0x18F]['STEER_STATUS'] is common and can happen during user override. sending 0 torque to avoid EPS sending error 5
     lkas_active = enabled and not CS.steer_not_allowed and self.auto_Steer
@@ -226,16 +225,16 @@ class CarController(object):
       if not self.stock_online:
         self.stock_lane_limit = self.avg_lane_limit
       
-      self.apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX * self.stock_lane_limit, STEER_MAX * self.stock_lane_limit))
+      self.apply_steer = clip(STEER_MAX * -actuators.steer * (1 - (CS.angle_steers / 60)) ** 4, -STEER_MAX * self.stock_lane_limit, STEER_MAX * self.stock_lane_limit)
 
     else:
       self.apply_steer = orig_apply_steer
     
-    if lkas_active:
-      if abs(CS.angle_steers_rate) < (2 * actuators.steerAngle):
-        self.apply_steer = clip(-actuators.steerAngle * 1000, -0x7DFF, 0x7DFF)
-    else:
-      self.apply_steer = 0
+    #if lkas_active:
+    #  if abs(CS.angle_steers_rate) < (2 * actuators.steerAngle):
+    #    self.apply_steer = clip(-actuators.steerAngle * 1000, -0x7DFF, 0x7DFF)
+    #else:
+    #  self.apply_steer = 0
 
     #steer_amplifier = 1
     #if CS.stock_steer_steer_torque != 0:
