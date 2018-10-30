@@ -73,6 +73,7 @@ class LatControl(object):
       l_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.l_poly))
       r_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.r_poly))
       p_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.p_poly))
+      c_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.c_poly))
 
       # account for actuation delay
       self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers, curvature_factor, VM.CP.steerRatio, VM.CP.steerActuatorDelay)
@@ -104,7 +105,12 @@ class LatControl(object):
           self.last_cloudlog_t = t
           cloudlog.warning("Lateral mpc - nan: True")
       
-      self.steerdata = ("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d" % (delta_desired, angle_offset, self.angle_steers_des_mpc, PL.PP.l_prob, PL.PP.r_prob, PL.PP.p_prob, l_poly[0], l_poly[1], l_poly[2], l_poly[3], r_poly[0], r_poly[1], r_poly[2], r_poly[3], p_poly[0], p_poly[1], p_poly[2], p_poly[3], v_ego, int(time.time() * 1000000000)))
+      self.steerdata = ("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d" % (delta_desired, angle_offset, \
+                self.angle_steers_des_mpc, PL.PP.l_prob, \
+                PL.PP.r_prob, PL.PP.c_prob, PL.PP.p_prob, l_poly[0], l_poly[1], l_poly[2], l_poly[3], r_poly[0], r_poly[1], r_poly[2], r_poly[3], \
+                p_poly[0], p_poly[1], p_poly[2], p_poly[3], PL.PP.c_poly[0], PL.PP.c_poly[1], PL.PP.c_poly[2], PL.PP.c_poly[3], PL.PP.d_poly[0], PL.PP.d_poly[1], \
+                PL.PP.d_poly[2], PL.PP.lane_width, PL.PP.lane_width_estimate, PL.PP.lane_width_certainty, v_ego, int(time.time() * 1000000000)))
+                #PL.PP.d_poly[2], PL.PP.d_poly[3], v_ego, int(time.time() * 1000000000)))
 
     elif self.steerdata != "":
       self.steerpub.send(self.steerdata)

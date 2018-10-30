@@ -266,18 +266,20 @@ class CarController(object):
     can_sends.extend(hondacan.create_steering_control(self.packer, int(self.apply_steer), lkas_active, CS.CP.carFingerprint, idx))
     self.max_stock_steer = max(self.max_stock_steer, abs(self.apply_steer), abs(CS.stock_steer_steer_torque))
 
-    if (enabled and lkas_active) or (frame % 100) == 0:
+    if (enabled and lkas_active and (frame % 5) == 0) or (self.stock_online and (frame % 1) == 0):
       command_steer_output = actuators.steerAngle
       actual_steer_output = CS.angle_steers
-      self.steerData += ('%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|' \
-                % (CS.CP.steerKpV[0], CS.CP.steerKiV[0], float(CS.CP.steerKf), 1,1,1,1, 1,1,1,1,1,1,1,  
+      self.steerData += ('%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|' \
+                % (CS.CP.steerKpV[0], CS.CP.steerKiV[0], float(CS.CP.steerKf),   
                 actual_steer_output, CS.angle_steers_rate, self.apply_steer, CS.steer_torque_driver, \
-                command_steer_output, CS.CP.steerRatio * (1 - (CS.angle_steers / 60)) ** 4, int(time.time() * 100) * 10000000))
+                CS.lane11, CS.lane12, CS.lane13, CS.lane14, CS.lane15, CS.lane16, CS.lane17, CS.lane18, CS.lane19, CS.lane1A, \
+                CS.lane31, CS.lane32, CS.lane33, CS.lane34, CS.lane35, CS.lane36, CS.lane37, CS.lane38, CS.lane39, CS.lane3A, \
+                CS.lane51, CS.lane52, CS.lane53, CS.lane54, CS.lane55, CS.lane56, CS.lane57, CS.lane58, CS.lane59, CS.lane5A, \
+                CS.lane71, CS.lane72, CS.lane73, CS.lane74, CS.lane75, CS.lane76, CS.lane77, CS.lane78, CS.lane79, CS.lane7A, \
+                float(self.CS.stock_lane_curvature) / 20., CS.steer_offset, command_steer_output, CS.CP.steerRatio * (1 - (CS.angle_steers / 60)) ** 4, int(time.time() * 100) * 10000000))
 
       self.steerpub.send(self.steerData)
       self.steerData = ""
-
-
 
     #if (frame % 10) == 0:
     #  print(int(actuators.steerAngle), int(CS.angle_steers), self.max_stock_steer, abs(self.apply_steer), abs(CS.stock_steer_steer_torque))

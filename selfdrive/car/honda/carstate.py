@@ -155,14 +155,14 @@ def get_can_signals(CP):
                 ("STEER_TORQUE", "STEERING_CONTROL",0),
                 ("SPEED_LIMIT", "CAMERA_MESSAGES", 0)]
     checks += [("GAS_PEDAL_2", 100),
-                ("CUR_LANE_LEFT_1", 30),
-                ("CUR_LANE_LEFT_2", 30),
-                ("CUR_LANE_RIGHT_1", 30),
-                ("CUR_LANE_RIGHT_2", 30),
-                ("ADJ_LANE_LEFT_1", 30),
-                ("ADJ_LANE_LEFT_2", 30),
-                ("ADJ_LANE_RIGHT_1", 30),
-                ("ADJ_LANE_RIGHT_2", 30),
+                ("CUR_LANE_LEFT_1", 100),
+                ("CUR_LANE_LEFT_2", 100),
+                ("CUR_LANE_RIGHT_1", 100),
+                ("CUR_LANE_RIGHT_2", 100),
+                ("ADJ_LANE_LEFT_1", 52),
+                ("ADJ_LANE_LEFT_2", 52),
+                ("ADJ_LANE_RIGHT_1", 52),
+                ("ADJ_LANE_RIGHT_2", 52),
                 ("STEERING_CONTROL", 100),
                 ("RADAR_HUD", 10),
                 ("LKAS_HUD", 10),
@@ -383,6 +383,7 @@ class CarState(object):
       self.lane78 = cp.vl["ADJ_LANE_RIGHT_2"]["PARM_8"]
       self.lane79 = cp.vl["ADJ_LANE_RIGHT_2"]["PARM_9"]
       self.lane7A = cp.vl["ADJ_LANE_RIGHT_2"]["PARM_10"]
+      self.steer_offset = cp.vl['STEERING_SENSORS']['STEER_ANGLE_OFFSET']
 
       self.total_lane_confidence = (self.lane14 + self.lane34 + self.lane54 + self.lane74) 
       if self.total_lane_confidence > 0:
