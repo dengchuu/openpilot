@@ -166,6 +166,8 @@ class CarController(object):
     else:
       STEER_MAX = 0x1000
 
+    #STEER_MAX = min(STEER_MAX, (abs(CS.angle_steers) + 4) * 2000)
+
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_gas = clip(actuators.gas, 0., 1.)
     apply_brake = int(clip(self.brake_last * BRAKE_MAX, 0, BRAKE_MAX - 1))
@@ -186,7 +188,7 @@ class CarController(object):
     MAX_STEERING_SAMPLES = int(2000. / (CS.v_ego_raw + 1))
     speed_factored_average = int(500 / (CS.v_ego_raw + 1))
     
-    if False == False:
+    if False == True:
 
       if CS.lane14 > 0 or CS.lane34 > 0:
             
@@ -228,7 +230,10 @@ class CarController(object):
       self.apply_steer = clip(STEER_MAX * -actuators.steer * (1 - (CS.angle_steers / 60)) ** 4, -STEER_MAX * self.stock_lane_limit, STEER_MAX * self.stock_lane_limit)
 
     else:
-      self.apply_steer = orig_apply_steer
+      #self.apply_steer = orig_apply_steer
+      self.apply_steer = clip(STEER_MAX * -actuators.steer, -STEER_MAX, STEER_MAX)
+      #self.apply_steer = clip(STEER_MAX * (-actuators.steer * ((1 - (CS.angle_steers / 60)) ** 4)), -STEER_MAX, STEER_MAX)
+      #self.apply_steer = clip(STEER_MAX * (-actuators.steer * ((.5 + (abs(actuators.steerAngle) / 50)) ** 4)), -STEER_MAX, STEER_MAX)
     
     #if lkas_active:
     #  if abs(CS.angle_steers_rate) < (2 * actuators.steerAngle):
@@ -266,17 +271,15 @@ class CarController(object):
     can_sends.extend(hondacan.create_steering_control(self.packer, int(self.apply_steer), lkas_active, CS.CP.carFingerprint, idx))
     self.max_stock_steer = max(self.max_stock_steer, abs(self.apply_steer), abs(CS.stock_steer_steer_torque))
 
-    if (enabled and lkas_active and (frame % 5) == 0) or (self.stock_online and (frame % 1) == 0):
-      command_steer_output = actuators.steerAngle
-      actual_steer_output = CS.angle_steers
-      self.steerData += ('%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|' \
+    if (enabled and lkas_active and (frame % 2) == 1) or (self.stock_online and (frame % 5) == 0) or (frame % 10) == 0:
+      self.steerData += ('%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|' \
                 % (CS.CP.steerKpV[0], CS.CP.steerKiV[0], float(CS.CP.steerKf),   
-                actual_steer_output, CS.angle_steers_rate, self.apply_steer, CS.steer_torque_driver, \
+                CS.angle_steers, CS.angle_steers_rate, self.apply_steer, CS.steer_torque_driver, \
                 CS.lane11, CS.lane12, CS.lane13, CS.lane14, CS.lane15, CS.lane16, CS.lane17, CS.lane18, CS.lane19, CS.lane1A, \
                 CS.lane31, CS.lane32, CS.lane33, CS.lane34, CS.lane35, CS.lane36, CS.lane37, CS.lane38, CS.lane39, CS.lane3A, \
                 CS.lane51, CS.lane52, CS.lane53, CS.lane54, CS.lane55, CS.lane56, CS.lane57, CS.lane58, CS.lane59, CS.lane5A, \
                 CS.lane71, CS.lane72, CS.lane73, CS.lane74, CS.lane75, CS.lane76, CS.lane77, CS.lane78, CS.lane79, CS.lane7A, \
-                float(self.CS.stock_lane_curvature) / 20., CS.steer_offset, command_steer_output, CS.CP.steerRatio * (1 - (CS.angle_steers / 60)) ** 4, int(time.time() * 100) * 10000000))
+                float(CS.stock_lane_curvature) / 20., CS.steer_offset, actuators.steerAngle, CS.CP.steerRatio, int(time.time() * 100) * 10000000))
 
       self.steerpub.send(self.steerData)
       self.steerData = ""

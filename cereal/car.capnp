@@ -105,6 +105,7 @@ struct CarState {
   steeringPressed @9 :Bool;    # if the user is using the steering wheel
   stockConfidence @26 :Float32; 
   stockSteerSuggestion @27 :Float32;
+  frame @28 :UInt64;
 
   # cruise state
   cruiseState @10 :CruiseState;

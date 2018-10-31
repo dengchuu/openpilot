@@ -54,12 +54,14 @@ class LatControl(object):
     self.steerpub = self.context.socket(zmq.PUB)
     self.steerpub.bind("tcp://*:8594")
     self.steerdata = ""
+    
+    self.steer_steps = [0., 0., 0., 0., 0.]
 
 
   def reset(self):
     self.pid.reset()
 
-  def update(self, active, v_ego, angle_steers, steer_override, d_poly, angle_offset, VM, PL):
+  def update(self, active, v_ego, angle_steers, steer_override, d_poly, angle_offset, VM, PL, totalLaneConfidence, stockSteerSuggestion):
     cur_time = sec_since_boot()
     self.mpc_updated = False
     # TODO: this creates issues in replay when rewinding time: mpc won't run
@@ -120,11 +122,20 @@ class LatControl(object):
       output_steer = 0.0
       self.pid.reset()
     else:
-      # TODO: ideally we should interp, but for tuning reasons we keep the mpc solution
-      # constant for 0.05s.
-      dt = min(cur_time - self.angle_steers_des_time, _DT_MPC + _DT) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
-      self.angle_steers_des = self.angle_steers_des_prev + (dt / _DT_MPC) * (self.angle_steers_des_mpc - self.angle_steers_des_prev)
-      #self.angle_steers_des = self.angle_steers_des_mpc
+      #print(int(cur_time * 100) % 5)
+      #if False == True and totalLaneConfidence > 0:
+      #  self.steer_steps[int(cur_time * 100) % 5] = stockSteerSuggestion
+      #  self.angle_steers_des = (self.steer_steps[0] + self.steer_steps[1] + self.steer_steps[2] + self.steer_steps[3] + self.steer_steps[4]) / 5.
+      #else:
+        # TODO: ideally we should interp, but for tuning reasons we keep the mpc solution
+        # constant for 0.05s.
+        #dt = min(cur_time - self.angle_steers_des_time, 2 * (_DT_MPC + _DT)) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
+        #self.angle_steers_des = self.angle_steers_des_prev + (dt / _DT_MPC) * (self.angle_steers_des_mpc - self.angle_steers_des_prev)
+        #self.angle_steers_des = self.angle_steers_des_mpc
+        #self.steer_steps[int(cur_time * 100) % 5] = self.angle_steers_des
+      self.steer_steps[int(cur_time * 100) % 5] = self.angle_steers_des_mpc
+      self.angle_steers_des = (self.steer_steps[0] + self.steer_steps[1] + self.steer_steps[2] + self.steer_steps[3] + self.steer_steps[4]) / 5.
+
       steers_max = get_steer_max(VM.CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
@@ -135,6 +146,9 @@ class LatControl(object):
 
       output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=steer_override,
                                      feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
+                                     
+      if (int(cur_time * 100) % 20) == 0: 
+        print(steers_max, output_steer, VM.CP.steerRatio)
 
     self.sat_flag = self.pid.saturated
     return output_steer, float(self.angle_steers_des)

@@ -215,7 +215,7 @@ class CarInterface(object):
       ret.steerRatio = 15.96  # 11.82 is spec end-to-end
       tire_stiffness_factor = 0.8467
       #ret.steerKpV, ret.steerKiV = [[0.6], [0.18]]
-      ret.steerKpV, ret.steerKiV = [[0.13], [0.02]]
+      ret.steerKpV, ret.steerKiV = [[0.09], [0.05]]
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
@@ -408,7 +408,9 @@ class CarInterface(object):
     ret.steeringAngle = self.CS.angle_steers
     ret.steeringRate = self.CS.angle_steers_rate
     ret.stockConfidence = self.CS.total_lane_confidence
-    ret.stockSteerSuggestion = float(self.CS.stock_lane_curvature) / 20. #(6.28)
+    ret.stockSteerSuggestion = (float(self.CS.stock_lane_curvature) / 20.) - self.CS.steer_offset #(6.28)
+    ret.frame = self.frame
+    self.CP.steerRatio = 15.96  * max(0.1, (1 - abs(self.CS.angle_steers / 80))) ** 2.
 
     # gear shifter lever
     ret.gearShifter = self.CS.gear_shifter
