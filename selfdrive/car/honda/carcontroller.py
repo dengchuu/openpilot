@@ -271,7 +271,7 @@ class CarController(object):
     can_sends.extend(hondacan.create_steering_control(self.packer, int(self.apply_steer), lkas_active, CS.CP.carFingerprint, idx))
     self.max_stock_steer = max(self.max_stock_steer, abs(self.apply_steer), abs(CS.stock_steer_steer_torque))
 
-    if (enabled and lkas_active and (frame % 2) == 1) or (self.stock_online and (frame % 5) == 0) or (frame % 10) == 0:
+    if (enabled and lkas_active and (frame % 3) == 0) or (self.stock_online and (frame % 5) == 0) or (frame % 10) == 0:
       self.steerData += ('%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|' \
                 % (CS.CP.steerKpV[0], CS.CP.steerKiV[0], float(CS.CP.steerKf),   
                 CS.angle_steers, CS.angle_steers_rate, self.apply_steer, CS.steer_torque_driver, \
