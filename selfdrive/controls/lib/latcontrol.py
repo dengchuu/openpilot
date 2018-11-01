@@ -76,7 +76,7 @@ class LatControl(object):
       r_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.r_poly))
       p_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.p_poly))
       c_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.c_poly))
-
+      
       # account for actuation delay
       self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers, curvature_factor, VM.CP.steerRatio, VM.CP.steerActuatorDelay)
 
