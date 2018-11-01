@@ -408,10 +408,17 @@ class CarInterface(object):
     ret.steeringAngle = self.CS.angle_steers
     ret.steeringRate = self.CS.angle_steers_rate
     ret.stockConfidence = self.CS.total_lane_confidence
-    ret.stockSteerSuggestion = (float(self.CS.stock_lane_curvature) / 20.) - self.CS.steer_offset #(6.28)
+    ret.stockSteerSuggestion = (float(self.CS.stock_lane_curvature) / 30.) - self.CS.steer_offset #(6.28)
+
     ret.frame = self.frame
-    self.CP.steerRatio = 15.96  * max(0.1, (1 - abs(self.CS.angle_steers / 12))) ** 0.35
-    self.CP.steerKf = .00006 * max(0.1, (1 + abs(self.CS.angle_steers / 15))) ** 3.
+    self.CP.steerRatio = 15.96 * max(0.01, (1 - abs(self.CS.angle_steers / 12))) ** 0.35
+    self.CP.steerKf = .0001 * (1 + abs(self.CS.angle_steers / 15)) ** 6.
+    #self.CP.steerKpV = [0.1 / steerRatioFactor]
+    #self.CP.steerKiV = [0.05 / steerRatioFactor]
+    #self.CP.steerActuatorDelay = 0.01
+    #self.CP.steerRateCost = 0.5 * steerRatioFactor   # * max(0.1, (1 - abs(self.CS.angle_steers / 15))) ** 0.5
+    #if self.frame % 20 == 0:
+    #  print(steerRatioFactor)
 
     # gear shifter lever
     ret.gearShifter = self.CS.gear_shifter

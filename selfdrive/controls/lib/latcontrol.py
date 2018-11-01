@@ -147,8 +147,8 @@ class LatControl(object):
       output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=steer_override,
                                      feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
                                      
-      if (int(cur_time * 100) % 20) == 0: 
-        print(steers_max, output_steer, VM.CP.steerRatio)
+      #if (int(cur_time * 100) % 20) == 0: 
+      #  print(steers_max, output_steer, VM.CP.steerRatio)
 
     self.sat_flag = self.pid.saturated
     return output_steer, float(self.angle_steers_des)
