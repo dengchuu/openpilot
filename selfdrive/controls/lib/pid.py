@@ -55,17 +55,18 @@ class PIController(object):
     self.saturated = False
     self.control = 0
 
-  def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
+  def update(self, setpoint, measurement, ratioFactor=1.0, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
+
     self.speed = speed
 
     error = float(apply_deadzone(setpoint - measurement, deadzone))
-    self.p = error * self.k_p
-    self.f = feedforward * self.k_f
+    self.p = error * self.k_p / ratioFactor
+    self.f = feedforward * self.k_f / ratioFactor
 
     if override:
-      self.i -= self.i_unwind_rate * float(np.sign(self.i))
+      self.i -= self.i_unwind_rate * float(np.sign(self.i)) / ratioFactor
     else:
-      i = self.i + error * self.k_i * self.i_rate
+      i = self.i + error * self.k_i * self.i_rate / ratioFactor
       control = self.p + self.f + i
 
       if self.convert is not None:

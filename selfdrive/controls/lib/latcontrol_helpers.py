@@ -79,7 +79,7 @@ def calc_desired_path(l_poly,
   if l_prob + r_prob > 0.01:
     c_poly = ((l_poly - half_lane_poly) * l_prob +
               (r_poly + half_lane_poly) * r_prob) / (l_prob + r_prob)
-    c_prob = l_prob + r_prob - l_prob * r_prob
+    c_prob = (l_prob + r_prob - l_prob * r_prob) / 1.
   else:
     c_poly = np.zeros(4)
     c_prob = 0.
