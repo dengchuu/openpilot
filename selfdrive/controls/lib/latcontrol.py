@@ -54,10 +54,10 @@ class LatControl(object):
     self.steerpub = self.context.socket(zmq.PUB)
     self.steerpub.bind("tcp://*:8594")
     self.steerdata = ""
-    self.ratioExp = 3.
+    self.ratioExp = 2.9
     self.ratioScale = 20.
     self.steer_steps = [0., 0., 0., 0., 0.]
-
+    self.probFactor = 0.
 
   def reset(self):
     self.pid.reset()
@@ -88,10 +88,14 @@ class LatControl(object):
       self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                           l_poly, r_poly, p_poly,
                           PL.PP.l_prob, PL.PP.r_prob, PL.PP.p_prob, curvature_factor, v_ego_mpc, PL.PP.lane_width)
+      self.ProbFactor = ((PL.PP.r_prob + PL.PP.l_prob) / 2.
+      
       # reset to current steer angle if not active or overriding
       if active:
+        isActive = 1
         delta_desired = self.mpc_solution[0].delta[1]
       else:
+        isActive = 0
         delta_desired = math.radians(angle_steers - angle_offset) / cur_Steer_Ratio
 
       self.cur_state[0].delta = delta_desired
@@ -111,7 +115,7 @@ class LatControl(object):
           self.last_cloudlog_t = t
           cloudlog.warning("Lateral mpc - nan: True")
       
-      self.steerdata = ("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d" % (delta_desired, angle_offset, \
+      self.steerdata = ("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d" % (isActive, delta_desired, angle_offset, \
                 self.angle_steers_des_mpc, cur_Steer_Ratio, VM.CP.steerKf / ratioFactor, VM.CP.steerKpV[0] / ratioFactor, VM.CP.steerKiV[0] / ratioFactor, VM.CP.steerRateCost, PL.PP.l_prob, \
                 PL.PP.r_prob, PL.PP.c_prob, PL.PP.p_prob, l_poly[0], l_poly[1], l_poly[2], l_poly[3], r_poly[0], r_poly[1], r_poly[2], r_poly[3], \
                 p_poly[0], p_poly[1], p_poly[2], p_poly[3], PL.PP.c_poly[0], PL.PP.c_poly[1], PL.PP.c_poly[2], PL.PP.c_poly[3], PL.PP.d_poly[0], PL.PP.d_poly[1], \
@@ -139,7 +143,7 @@ class LatControl(object):
         steer_feedforward *= v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
       deadzone = 0.0
 
-      output_steer = self.pid.update(self.angle_steers_des, angle_steers, ratioFactor=ratioFactor, check_saturation=(v_ego > 10), override=steer_override,
+      output_steer = self.pid.update(self.angle_steers_des, angle_steers, ratioFactor=ratioFactor, probFactor=self.ProbFactor, check_saturation=(v_ego > 10), override=steer_override,
                                      feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
                                      
     self.sat_flag = self.pid.saturated

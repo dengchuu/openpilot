@@ -272,8 +272,12 @@ class CarController(object):
     self.max_stock_steer = max(self.max_stock_steer, abs(self.apply_steer), abs(CS.stock_steer_steer_torque))
 
     if (enabled and lkas_active and (frame % 3) == 0) or (self.stock_online and (frame % 5) == 0) or (frame % 10) == 0:
-      self.steerData += ('%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|' \
-                % (CS.CP.steerKpV[0], CS.CP.steerKiV[0], float(CS.CP.steerKf),   
+      if lkas_active:
+        isActive = 1
+      else:
+        isActive = 0
+      self.steerData += ('%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|' \
+                % (isActive, CS.CP.steerKpV[0], CS.CP.steerKiV[0], float(CS.CP.steerKf),   
                 CS.angle_steers, CS.angle_steers_rate, self.apply_steer, CS.steer_torque_driver, \
                 CS.lane11, CS.lane12, CS.lane13, CS.lane14, CS.lane15, CS.lane16, CS.lane17, CS.lane18, CS.lane19, CS.lane1A, \
                 CS.lane31, CS.lane32, CS.lane33, CS.lane34, CS.lane35, CS.lane36, CS.lane37, CS.lane38, CS.lane39, CS.lane3A, \
