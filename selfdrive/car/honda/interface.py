@@ -173,7 +173,7 @@ class CarInterface(object):
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
 
-    ret.steerKf = 0.00006
+    ret.steerKf = 0.000001
 
     if candidate == CAR.CIVIC:
       stop_and_go = True
@@ -215,7 +215,8 @@ class CarInterface(object):
       ret.steerRatio = 15.96  # 11.82 is spec end-to-end
       tire_stiffness_factor = 0.8467
       #ret.steerKpV, ret.steerKiV = [[0.6], [0.18]]
-      ret.steerKpV, ret.steerKiV = [[0.1], [0.05]]
+      ret.steerKpV, ret.steerKiV = [[0.05], [0.01]]
+      #ret.steerKpV, ret.steerKiV = [[0.1], [0.05]]
       ret.longitudinalKpBP = [0., 5., 35.]
       ret.longitudinalKpV = [1.2, 0.8, 0.5]
       ret.longitudinalKiBP = [0., 35.]
@@ -321,6 +322,7 @@ class CarInterface(object):
       raise ValueError("unsupported car %s" % candidate)
 
     ret.steerControlType = car.CarParams.SteerControlType.torque
+    #ret.steerControlType = car.CarParams.SteerControlType.angle
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not

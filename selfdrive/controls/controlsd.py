@@ -280,9 +280,9 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
     angle_offset = learn_angle_offset(active, CS.vEgo, angle_offset,
                                       PL.PP.c_poly, PL.PP.c_prob, CS.steeringAngle,
                                       CS.steeringPressed)
+    print(angle_offset)
 
   #if angle_offset < 0.6 : angle_offset = 0.7
-  #print(angle_offset)
 
   
   # *** gas/brake PID loop ***

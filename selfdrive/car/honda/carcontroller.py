@@ -268,10 +268,13 @@ class CarController(object):
     # Send steering command.
     idx = frame % 4
       
+    #can_sends.extend(hondacan.create_steering_control(self.packer, int(-actuators.steerAngle) * 1000, lkas_active, CS.CP.carFingerprint, idx))
+    #can_sends.extend(hondacan.create_steering_control(self.packer, int(-actuators.steerAngle - CS.steer_offset) * 1000, lkas_active, CS.CP.carFingerprint, idx))
     can_sends.extend(hondacan.create_steering_control(self.packer, int(self.apply_steer), lkas_active, CS.CP.carFingerprint, idx))
+
     self.max_stock_steer = max(self.max_stock_steer, abs(self.apply_steer), abs(CS.stock_steer_steer_torque))
 
-    if (enabled and lkas_active and (frame % 3) == 0) or (self.stock_online and (frame % 5) == 0) or (frame % 10) == 0:
+    if (enabled and lkas_active and (frame % 1) == 0) or (self.stock_online and (frame % 5) == 0) or (frame % 10) == 0:
       if lkas_active:
         isActive = 1
       else:

@@ -88,7 +88,6 @@ class LatControl(object):
       self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                           l_poly, r_poly, p_poly,
                           PL.PP.l_prob, PL.PP.r_prob, PL.PP.p_prob, curvature_factor, v_ego_mpc, PL.PP.lane_width)
-      self.ProbFactor = ((PL.PP.r_prob + PL.PP.l_prob) / 2.
       
       # reset to current steer angle if not active or overriding
       if active:
@@ -132,8 +131,9 @@ class LatControl(object):
     else:
       # TODO: ideally we should interp, but for tuning reasons we keep the mpc solution
       # constant for 0.05s.
-      self.steer_steps[int(cur_time * 100) % 5] = self.angle_steers_des_mpc
-      self.angle_steers_des = (self.steer_steps[0] + self.steer_steps[1] + self.steer_steps[2] + self.steer_steps[3] + self.steer_steps[4]) / 5.
+      #self.steer_steps[int(cur_time * 100) % 5] = self.angle_steers_des_mpc
+      #self.angle_steers_des = (self.steer_steps[0] + self.steer_steps[1] + self.steer_steps[2] + self.steer_steps[3] + self.steer_steps[4]) / 5.
+      self.angle_steers_des = self.angle_steers_des_mpc
 
       steers_max = get_steer_max(VM.CP, v_ego)
       self.pid.pos_limit = steers_max
@@ -143,7 +143,7 @@ class LatControl(object):
         steer_feedforward *= v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
       deadzone = 0.0
 
-      output_steer = self.pid.update(self.angle_steers_des, angle_steers, ratioFactor=ratioFactor, probFactor=self.ProbFactor, check_saturation=(v_ego > 10), override=steer_override,
+      output_steer = self.pid.update(self.angle_steers_des, angle_steers, ratioFactor=ratioFactor, check_saturation=(v_ego > 10), override=steer_override,
                                      feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
                                      
     self.sat_flag = self.pid.saturated
