@@ -291,8 +291,8 @@ def state_control(plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, 
                                               CP, PL.lead_1)
 
   # *** steering PID loop ***
-  actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle,
-                                                     CS.steeringPressed, plan.dPoly, -0.9, VM, PL)
+  actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle, CS.steeringRate, 
+                                                     CS.steeringPressed, plan.dPoly, -0.9, CP, VM, PL)
 
   # send a "steering required alert" if saturation count has reached the limit
   if LaC.sat_flag and CP.steerLimitAlert and not CS.steeringPressed:
@@ -473,7 +473,7 @@ def controlsd_thread(gctx=None, rate=100, default_bias=0.):
   PL = Planner(CP, fcw_enabled)
   LoC = LongControl(CP, CI.compute_gb)
   VM = VehicleModel(CP)
-  LaC = LatControl(VM)
+  LaC = LatControl(CP)
   AM = AlertManager()
   driver_status = DriverStatus()
 
