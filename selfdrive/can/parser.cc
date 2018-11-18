@@ -376,7 +376,7 @@ class CANParser {
   void *subscriber = NULL;
 
   void *forwarder = NULL;
-  uint64_t can_forward_period_ns = 100000000;
+  uint64_t can_forward_period_ns = 200000000;
   uint64_t next_can_forward_ns = 0;
   std::unordered_map<uint32_t, std::unordered_map<uint32_t, uint64_t>> raw_can_values;
 
