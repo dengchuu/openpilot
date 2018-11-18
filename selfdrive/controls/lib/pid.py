@@ -59,14 +59,14 @@ class PIController(object):
 
     self.speed = speed
 
-    error = float(apply_deadzone(setpoint - measurement, deadzone)) #* probFactor
-    self.p = error * self.k_p * ratioFactor
+    error = float(apply_deadzone(setpoint - measurement, deadzone)) 
+    self.p = error * self.k_p / ratioFactor
     self.f = feedforward * self.k_f / ratioFactor
 
     if override:
-      self.i -= self.i_unwind_rate * float(np.sign(self.i)) * ratioFactor
+      self.i -= self.i_unwind_rate * float(np.sign(self.i)) / ratioFactor
     else:
-      i = self.i + error * self.k_i * self.i_rate * ratioFactor
+      i = self.i + error * self.k_i * self.i_rate / ratioFactor
       control = self.p + self.f + i
 
       if self.convert is not None:

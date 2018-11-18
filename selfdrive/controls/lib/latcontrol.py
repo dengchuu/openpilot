@@ -54,7 +54,7 @@ class LatControl(object):
     self.steerpub = self.context.socket(zmq.PUB)
     self.steerpub.bind("tcp://*:8594")
     self.steerdata = ""
-    self.ratioExp = 2.9
+    self.ratioExp = 2.2
     self.ratioScale = 20.
     self.steer_steps = [0., 0., 0., 0., 0.]
     self.probFactor = 0.
@@ -76,30 +76,30 @@ class LatControl(object):
 
       curvature_factor = VM.curvature_factor(v_ego)
 
-      l_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.l_poly))
-      r_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.r_poly))
-      p_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.p_poly))
-      c_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.c_poly))
+      self.l_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.l_poly))
+      self.r_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.r_poly))
+      self.p_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.p_poly))
+      self.c_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.c_poly))
       
       # account for actuation delay
       self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers, curvature_factor, cur_Steer_Ratio, VM.CP.steerActuatorDelay)
 
       v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
       self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
-                          l_poly, r_poly, p_poly,
+                          self.l_poly, self.r_poly, self.p_poly,
                           PL.PP.l_prob, PL.PP.r_prob, PL.PP.p_prob, curvature_factor, v_ego_mpc, PL.PP.lane_width)
-      
+
       # reset to current steer angle if not active or overriding
       if active:
-        isActive = 1
+        self.isActive = 1
         delta_desired = self.mpc_solution[0].delta[1]
       else:
-        isActive = 0
+        self.isActive = 0
         delta_desired = math.radians(angle_steers - angle_offset) / cur_Steer_Ratio
 
       self.cur_state[0].delta = delta_desired
       self.angle_steers_des_mpc = float(math.degrees(delta_desired * cur_Steer_Ratio) + angle_offset)
-        
+
       self.angle_steers_des_time = cur_time
       self.mpc_updated = True
 
@@ -113,17 +113,11 @@ class LatControl(object):
         if t > self.last_cloudlog_t + 5.0:
           self.last_cloudlog_t = t
           cloudlog.warning("Lateral mpc - nan: True")
-      
-      self.steerdata = ("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d" % (isActive, delta_desired, angle_offset, \
-                self.angle_steers_des_mpc, cur_Steer_Ratio, VM.CP.steerKf / ratioFactor, VM.CP.steerKpV[0] / ratioFactor, VM.CP.steerKiV[0] / ratioFactor, VM.CP.steerRateCost, PL.PP.l_prob, \
-                PL.PP.r_prob, PL.PP.c_prob, PL.PP.p_prob, l_poly[0], l_poly[1], l_poly[2], l_poly[3], r_poly[0], r_poly[1], r_poly[2], r_poly[3], \
-                p_poly[0], p_poly[1], p_poly[2], p_poly[3], PL.PP.c_poly[0], PL.PP.c_poly[1], PL.PP.c_poly[2], PL.PP.c_poly[3], PL.PP.d_poly[0], PL.PP.d_poly[1], \
-                PL.PP.d_poly[2], PL.PP.lane_width, PL.PP.lane_width_estimate, PL.PP.lane_width_certainty, v_ego, int(time.time() * 1000000000)))
 
-    elif self.steerdata != "":
+    if self.steerdata != "" and int(cur_time * 100) % 50 == 3:
       self.steerpub.send(self.steerdata)
       self.steerdata = ""
-          
+
     if v_ego < 0.3 or not active:
       output_steer = 0.0
       self.pid.reset()
@@ -131,20 +125,28 @@ class LatControl(object):
     else:
       # TODO: ideally we should interp, but for tuning reasons we keep the mpc solution
       # constant for 0.05s.
-      #self.steer_steps[int(cur_time * 100) % 5] = self.angle_steers_des_mpc
-      #self.angle_steers_des = (self.steer_steps[0] + self.steer_steps[1] + self.steer_steps[2] + self.steer_steps[3] + self.steer_steps[4]) / 5.
-      self.angle_steers_des = self.angle_steers_des_mpc
+      self.steer_steps[int(cur_time * 100) % 5] = self.angle_steers_des_mpc
+      self.angle_steers_des = (self.steer_steps[0] + self.steer_steps[1] + self.steer_steps[2] + self.steer_steps[3] + self.steer_steps[4]) / 5.
+      #self.angle_steers_des = self.angle_steers_des_mpc
 
       steers_max = get_steer_max(VM.CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
-      steer_feedforward = self.angle_steers_des   # feedforward desired angle
-      if VM.CP.steerControlType == car.CarParams.SteerControlType.torque:
+      steer_feedforward = float(self.angle_steers_des) + angle_offset   # feedforward desired angle
+      if abs(steer_feedforward) > 0.0 and VM.CP.steerControlType == car.CarParams.SteerControlType.torque:
         steer_feedforward *= v_ego**2  # proportional to realigning tire momentum (~ lateral accel)
-      deadzone = 0.0
+        deadzone = 0.0
+      else:
+        deadzone = 0.0
 
       output_steer = self.pid.update(self.angle_steers_des, angle_steers, ratioFactor=ratioFactor, check_saturation=(v_ego > 10), override=steer_override,
                                      feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
-                                     
+
+      self.steerdata += ("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|" % (self.isActive, angle_steers, self.angle_steers_des, angle_offset, \
+          self.angle_steers_des_mpc, cur_Steer_Ratio, VM.CP.steerKf / ratioFactor, VM.CP.steerKpV[0] / ratioFactor, VM.CP.steerKiV[0] / ratioFactor, VM.CP.steerRateCost, PL.PP.l_prob, \
+          PL.PP.r_prob, PL.PP.c_prob, PL.PP.p_prob, self.l_poly[0], self.l_poly[1], self.l_poly[2], self.l_poly[3], self.r_poly[0], self.r_poly[1], self.r_poly[2], self.r_poly[3], \
+          self.p_poly[0], self.p_poly[1], self.p_poly[2], self.p_poly[3], PL.PP.c_poly[0], PL.PP.c_poly[1], PL.PP.c_poly[2], PL.PP.c_poly[3], PL.PP.d_poly[0], PL.PP.d_poly[1], \
+          PL.PP.d_poly[2], PL.PP.lane_width, PL.PP.lane_width_estimate, PL.PP.lane_width_certainty, v_ego, self.pid.p, self.pid.i, self.pid.f, int(time.time() * 100) * 10000000))
+
     self.sat_flag = self.pid.saturated
     return output_steer, float(self.angle_steers_des)
