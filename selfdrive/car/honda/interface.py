@@ -90,6 +90,7 @@ class CarInterface(object):
     self.can_invalid_count = 0
 
     self.cp = get_can_parser(CP)
+    self.cp_to_cam = get_can_parser(CP,)
 
     # *** init the major players ***
     self.CS = CarState(CP)
@@ -372,8 +373,10 @@ class CarInterface(object):
     canMonoTimes = []
 
     self.cp.update(int(sec_since_boot() * 1e9), False)
+    self.cp_from_cam.update(int(sec_since_boot() * 1e9), False)
+    self.cp_to_cam.update(int(sec_since_boot() * 1e9), False)
 
-    self.CS.update(self.cp)
+    self.CS.update(self.cp, self.cp_from_cam, self.cp_to_cam)
 
     # create message
     ret = car.CarState.new_message()

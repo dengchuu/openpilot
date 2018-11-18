@@ -137,7 +137,8 @@ struct MessageState {
   bool honda_update_counter(int64_t v) {
     uint8_t old_counter = counter;
     counter = v;
-    if ((((old_counter+1) & 3) != v) and address != 0x33d and address != 0xe4) {
+    //if ((((old_counter+1) & 3) != v) and address != 0x33d and address != 0xe4) {
+    if (((old_counter+1) & 3) != v) {
       counter_fail += 1;
       if (counter_fail > 1) {
         INFO("%X COUNTER FAIL %d -- %d vs %d\n", address, counter_fail, old_counter, (int)v);
@@ -254,11 +255,13 @@ class CANParser {
 
         if (can_forward_period_ns > 0) raw_can_values[cmsg.getSrc()][cmsg.getAddress()] = read_u64_be(dat);
 
-        if (((cmsg.getAddress() == 0xe4 or cmsg.getAddress() == 0x33d) and cmsg.getSrc() == bus) or \
+        /*if (((cmsg.getAddress() == 0xe4 or cmsg.getAddress() == 0x33d) and cmsg.getSrc() == bus) or \
              (cmsg.getSrc() != bus and cmsg.getAddress() != 0x33d and cmsg.getAddress() != 0xe4 and \
-             (cmsg.getAddress() < 0x240 or cmsg.getAddress() > 0x24A))) {
+             (cmsg.getAddress() < 0x240 or cmsg.getAddress() > 0x24A))) {*/
+        if (cmsg.getSrc() != bus) {
           continue;
         }
+        
         auto state_it = message_states.find(cmsg.getAddress());
         if (state_it == message_states.end()) {
           // DEBUG("skip %d: not specified\n", cmsg.getAddress());
