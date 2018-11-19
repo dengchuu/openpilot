@@ -274,7 +274,7 @@ class CarController(object):
 
     self.max_stock_steer = max(self.max_stock_steer, abs(self.apply_steer), abs(CS.stock_steer_steer_torque))
 
-    if (enabled and lkas_active and (frame % 1) == 0) or (self.stock_online and (frame % 5) == 0) or (frame % 10) == 0:
+    if (enabled and lkas_active and (frame % 2) == 0) or (self.stock_online and (frame % 2) == 0) or (frame % 20) == 0:
       if lkas_active:
         isActive = 1
       else:
@@ -288,8 +288,8 @@ class CarController(object):
                 CS.lane71, CS.lane72, CS.lane73, CS.lane74, CS.lane75, CS.lane76, CS.lane77, CS.lane78, CS.lane79, CS.lane7A, \
                 float(CS.stock_lane_curvature) / 20., CS.steer_offset, actuators.steerAngle, CS.CP.steerRatio, int(time.time() * 100) * 10000000))
 
-      self.steerpub.send(self.steerData)
-      self.steerData = ""
+      #self.steerpub.send(self.steerData)
+      #self.steerData = ""
 
     #if (frame % 10) == 0:
     #  print(int(actuators.steerAngle), int(CS.angle_steers), self.max_stock_steer, abs(self.apply_steer), abs(CS.stock_steer_steer_torque))
@@ -310,9 +310,9 @@ class CarController(object):
     #          self.avg_lane_limit, frame, int(self.avg_lane_center), self.sample_count, 
     #          self.stock_lane_limit * 100, int(time.time() * 1000000000)))
     #          
-    #elif len(self.steerData) > 10 and (frame % 10) == 5:
-    #  self.steerpub.send(self.steerData)
-    #  self.steerData = ""
+    if len(self.steerData) > 10 and (frame % 10) == 7:
+      self.steerpub.send(self.steerData)
+      self.steerData = ""
 
     # Send dashboard UI commands.
     if (frame % 10) == 0:

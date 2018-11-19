@@ -9,7 +9,7 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, get_events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.honda.carstate import CarState, get_can_parser
+from selfdrive.car.honda.carstate import CarState, get_can_parser, get_cam_can_parser
 from selfdrive.car.honda.values import CruiseButtons, CM, BP, AH, CAR, HONDA_BOSCH, CruiseSettings
 from selfdrive.controls.lib.planner import A_ACC_MAX
 
@@ -90,7 +90,7 @@ class CarInterface(object):
     self.can_invalid_count = 0
 
     self.cp = get_can_parser(CP)
-    self.cp_to_cam = get_can_parser(CP,)
+    self.cp_cam = get_cam_can_parser(CP)
 
     # *** init the major players ***
     self.CS = CarState(CP)
@@ -373,10 +373,9 @@ class CarInterface(object):
     canMonoTimes = []
 
     self.cp.update(int(sec_since_boot() * 1e9), False)
-    self.cp_from_cam.update(int(sec_since_boot() * 1e9), False)
-    self.cp_to_cam.update(int(sec_since_boot() * 1e9), False)
-
-    self.CS.update(self.cp, self.cp_from_cam, self.cp_to_cam)
+    self.cp_cam.update(int(sec_since_boot() * 1e9), False)
+   
+    self.CS.update(self.cp, self.cp_cam)
 
     # create message
     ret = car.CarState.new_message()

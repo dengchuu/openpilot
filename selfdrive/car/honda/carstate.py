@@ -2,7 +2,7 @@ from common.numpy_fast import interp
 from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser, CANDefine
 from selfdrive.config import Conversions as CV
-from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR
+from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH
 
 def parse_gear_shifter(gear, vals):
 
@@ -440,7 +440,7 @@ class CarState(object):
       self.lane78 = cp_cam.vl["ADJ_LANE_RIGHT_2"]["PARM_8"]
       self.lane79 = cp_cam.vl["ADJ_LANE_RIGHT_2"]["PARM_9"]
       self.lane7A = cp_cam.vl["ADJ_LANE_RIGHT_2"]["PARM_10"]
-      self.steer_offset = cp_cam.vl['STEERING_SENSORS']['STEER_ANGLE_OFFSET']
+      self.steer_offset = cp.vl['STEERING_SENSORS']['STEER_ANGLE_OFFSET']
 
       self.total_lane_confidence = (self.lane14 + self.lane34 + self.lane54 + self.lane74) 
       if self.total_lane_confidence > 0:
