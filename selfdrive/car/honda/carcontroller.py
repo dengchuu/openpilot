@@ -259,8 +259,8 @@ class CarController(object):
     #  self.apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX * self.stock_lane_limit, STEER_MAX * self.stock_lane_limit))
 
 
-    if CS.blinker_on or not self.auto_Steer or (CS.steer_override and (self.apply_steer < 0) == (CS.steer_torque_driver < 0)):
-      self.apply_steer = 0
+    #if CS.blinker_on or not self.auto_Steer or (CS.steer_override and (self.apply_steer < 0) == (CS.steer_torque_driver < 0)):
+    #  self.apply_steer = 0
 
     # Send CAN commands.
     can_sends = []
