@@ -230,6 +230,7 @@ class LatControl(object):
           self.center_angle = (self.center_count * self.center_angle + angle_steers) / (self.center_count + 1)
           self.center_count = min(1000, self.center_count + 1)
   
+        self.angle_steers_des = self.angle_steers_des_mpc
         if self.frame % 2 == 0:
           self.steerdata += ("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|" % (self.isActive, \
           self.pCost, self.lCost, self.rCost, self.hCost, self.srCost, future_angle_steers, angle_rate, self.steer_zero_crossing, self.center_angle, angle_steers, self.angle_steers_des, angle_offset, \

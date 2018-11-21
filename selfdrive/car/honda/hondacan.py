@@ -74,8 +74,8 @@ def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, i
   commands.append(packer.make_can_msg("STEERING_CONTROL", bus, values, idx)) 
   
   #spoof_steer = 1000 + (apply_steer * (.1 + (float(idx) / 10.)))
-  spoof_steer = -apply_steer
-  #commands.append(packer.make_can_msg("STEER_STATUS", 0, {'STEER_TORQUE_SENSOR': int(spoof_steer)}, idx))
+  spoof_steer =  np.clip(-apply_steer / 4, -2000, 2000)
+  commands.append(packer.make_can_msg("STEER_STATUS", 0, {'STEER_TORQUE_SENSOR': int(spoof_steer)}, idx))
   return commands
 
 def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
@@ -104,7 +104,7 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
     #'SET_ME_X48': 0x48,
     #'GERNBY1': hud.gernby1,
     #'GERNBY2': hud.gernby2,
-    'GERNBY3': 0x41, #hud.gernby3,
+    'GERNBY3': 0x21, #hud.gernby3,
     'GERNBY4': 0x48, #hud.gernby4,
     #'LKAS_OFF': hud.LKAS_OFF,
     #'STEERING_REQUIRED': hud.steer_required,

@@ -85,6 +85,8 @@ class Calibrator(object):
     self.speed = 0
     self.vp_cycles = 0
     self.angle_offset = 0.
+    self.lane_width_estimate = 3.7
+    self.lane_width = 3.7
     self.yaw_rate = 0.
     self.l100_last_updated = 0
     self.prev_orbs = None
@@ -186,6 +188,7 @@ class Calibrator(object):
     self.l100_last_updated = self.time_orb
     self.speed = log.live100.vEgo
     self.angle_offset = log.live100.angleOffset
+    self.lane_width_estimate = log.live100.lane_width
     self.yaw_rate = log.live100.curvature * self.speed
 
   def handle_debug(self):

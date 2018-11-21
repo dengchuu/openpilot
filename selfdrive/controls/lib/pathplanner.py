@@ -1,3 +1,6 @@
+import json
+from common.params import Params
+from common.realtime import sec_since_boot
 from common.numpy_fast import interp
 from selfdrive.controls.lib.latcontrol_helpers import model_polyfit, calc_desired_path, compute_path_pinv
 
@@ -13,12 +16,23 @@ class PathPlanner(object):
     self.last_model = 0.
     self.lead_dist, self.lead_prob, self.lead_var = 0, 0, 1
     self._path_pinv = compute_path_pinv()
-
-    self.lane_width_estimate = 2.85
+    self.lane_width_estimate = 3.7
     self.lane_width_certainty = 1.0
     self.lane_width = 3.7
+    self.lane_width_saved_time = 0.
+
+    file = open("/sdcard/steering/lane_width.dat","r")
+    self.lane_width_estimate = float(json.loads(file.read()))
+    self.lane_width = self.lane_width_estimate
+    print('lane width = %f' % (self.lane_width))
 
   def update(self, v_ego, md):
+    if v_ego == 0 and sec_since_boot() > (self.lane_width_saved_time + 60.):
+      file = open("/sdcard/steering/lane_width.dat","w")
+      file.write(json.dumps(self.lane_width))
+      file.close()
+      self.lane_width_saved_time = sec_since_boot()
+
     if md is not None:
       p_poly = model_polyfit(md.model.path.points, self._path_pinv)  # predicted path
       l_poly = model_polyfit(md.model.leftLane.points, self._path_pinv)  # left line
