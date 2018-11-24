@@ -174,7 +174,7 @@ class CarInterface(object):
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
 
-    ret.steerKf = 0.0002
+    ret.steerKf = 0.00006
 
     if candidate == CAR.CIVIC:
       stop_and_go = True
@@ -363,7 +363,7 @@ class CarInterface(object):
     ret.startAccel = 0.5
 
     ret.steerActuatorDelay = 0.1
-    ret.steerRateCost = 0.3
+    ret.steerRateCost = 0.5
 
     return ret
 
@@ -410,7 +410,8 @@ class CarInterface(object):
     ret.steeringAngle = self.CS.angle_steers
     ret.steeringRate = self.CS.angle_steers_rate
     ret.stockConfidence = self.CS.total_lane_confidence
-    ret.stockSteerSuggestion = (float(self.CS.stock_lane_curvature) / 30.) - self.CS.steer_offset #(6.28)
+    #ret.stockLaneCenter = float(self.CS.stock_lane_center) / 100.
+    ret.stockSteerSuggestion = (float(self.CS.stock_lane_curvature) / 30.)  # .CS.steer_offset #(6.28)
 
     ret.frame = self.frame
     # gear shifter lever

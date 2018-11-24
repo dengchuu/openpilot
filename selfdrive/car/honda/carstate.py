@@ -442,10 +442,12 @@ class CarState(object):
       self.lane7A = cp_cam.vl["ADJ_LANE_RIGHT_2"]["PARM_10"]
       self.steer_offset = cp.vl['STEERING_SENSORS']['STEER_ANGLE_OFFSET']
 
-      self.total_lane_confidence = (self.lane14 + self.lane34 + self.lane54 + self.lane74) 
+      self.total_lane_confidence = (self.lane14 + self.lane34) 
       if self.total_lane_confidence > 0:
-        self.stock_lane_center = (((self.lane11 * self.lane14) + (self.lane31 * self.lane34) + (self.lane51 * self.lane54) + (self.lane71 * self.lane74)) / self.total_lane_confidence)
-        self.stock_lane_curvature = (((self.lane17 * self.lane14) + (self.lane37 * self.lane34) + (self.lane57 * self.lane54) + (self.lane77 * self.lane74)) / self.total_lane_confidence)
+        self.stock_lane_center = (((self.lane11 * self.lane14) + (self.lane31 * self.lane34)) / self.total_lane_confidence)
+        self.stock_lane_curvature = (((self.lane17 * self.lane14) + (self.lane37 * self.lane34)) / self.total_lane_confidence)
+        #self.stock_lane_center = (((self.lane11 * self.lane14) + (self.lane31 * self.lane34) + (self.lane51 * self.lane54) + (self.lane71 * self.lane74)) / self.total_lane_confidence)
+        #self.stock_lane_curvature = (((self.lane17 * self.lane14) + (self.lane37 * self.lane34) + (self.lane57 * self.lane54) + (self.lane77 * self.lane74)) / self.total_lane_confidence)
       else:
         self.stock_lane_center = 0.
         self.stock_lane_curvature = 0.

@@ -40,6 +40,7 @@ class LatControl(object):
                             k_f=CP.steerKf, pos_limit=1.0)
     self.last_cloudlog_t = 0.0
     self.setup_mpc(CP.steerRateCost)
+    self.ff_smoothing = CP.steerActuatorDelay / _DT
 
   def setup_mpc(self, steer_rate_cost):
     self.libmpc = libmpc_py.libmpc
@@ -80,11 +81,13 @@ class LatControl(object):
     self.tiny_torque_array = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     self.tiny_torque_count = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     self.center_angle = 0.
-    self.center_count = 0
+    self.center_count = 0.
     self.save_steering = False
     self.steer_zero_crossing = 0.0
     self.steer_initialized = False
     self.avg_angle_steers = 0.0
+    self.feed_forward = 0.0
+    self.angle_rate_desired = 0.0
     self.pCost = 0.0
     self.lCost = 0.0
     self.rCost = 0.0
@@ -148,6 +151,7 @@ class LatControl(object):
       self.cur_state[0].delta = delta_desired
 
       self.angle_steers_des_mpc = float(math.degrees(delta_desired * cur_Steer_Ratio) + angle_offset)
+      self.angle_rate_desired = (self.angle_steers_des_mpc - self.starting_angle_steers) / _DT_MPC
       self.mpc_updated = True
 
       #  Check for infeasable MPC solution
@@ -196,24 +200,27 @@ class LatControl(object):
       self.avg_angle_rate = (self.avg_angle_rate * self.angle_rate_count + angle_rate) / (self.angle_rate_count + 1) 
       self.angle_rate_count += 1
 
-      if abs(angle_rate) <= 1. or abs(angle_steers - self.angle_steers_des_mpc) < 0.25:
+      if abs(angle_rate) <= 1. and abs(angle_steers - self.angle_steers_des_mpc) < 0.25:
         future_angle_steers = angle_steers
+        self.feed_forward = (((self.ff_smoothing - 1) * self.feed_forward) + 0) / self.ff_smoothing
       else:
         future_angle_steers = (self.avg_angle_rate * _DT_MPC) + self.starting_angle_steers
-      
+        self.feed_forward = (((self.ff_smoothing - 1) * self.feed_forward) + (100. * self.angle_rate_desired)) / self.ff_smoothing
+
       steers_max = get_steer_max(CP, v_ego)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
+      
+      #if ratioFactor > 0. and enable_enhancements and CP.steerControlType == car.CarParams.SteerControlType.torque:
+      #  self.feed_forward = (((self.ff_smoothing - 1) * self.feed_forward) + (v_ego**2 * self.angle_rate_desired / ratioFactor)) / self.ff_smoothing
+        #self.feed_forward *= v_ego**2 / ratioFactor
+        #steer_feedforward = apply_deadzone(self.angle_steers_des_mpc - float(angle_offset), 0.5)  #self.steer_zero_crossing
+        #steer_feedforward *= v_ego**2 / ratioFactor  # proportional to realigning tire momentum (~ lateral accel)
 
-      if enable_enhancements and CP.steerControlType == car.CarParams.SteerControlType.torque:
-        steer_feedforward = apply_deadzone(self.angle_steers_des_mpc - float(angle_offset), 0.5)  #self.steer_zero_crossing
-        steer_feedforward *= v_ego**2 / ratioFactor  # proportional to realigning tire momentum (~ lateral accel)
-      else:
-        steer_feedforward = self.angle_steers_des_mpc * v_ego**2   # feedforward desired angle
       deadzone = 0.0
 
       output_steer =  self.pid.update(self.angle_steers_des_mpc, future_angle_steers, check_saturation=False, override=steer_override,
-                                     feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
+                                     feedforward=self.feed_forward, speed=v_ego, deadzone=deadzone)
 
       if not steer_override and v_ego > 10. and abs(angle_steers) <= 10:
         #take torque samples for external characterization
@@ -231,7 +238,7 @@ class LatControl(object):
           self.center_count = min(1000, self.center_count + 1)
   
         self.angle_steers_des = self.angle_steers_des_mpc
-        if self.frame % 2 == 0:
+        if True == True or self.frame % 2 == 0:
           self.steerdata += ("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d|" % (self.isActive, \
           self.pCost, self.lCost, self.rCost, self.hCost, self.srCost, future_angle_steers, angle_rate, self.steer_zero_crossing, self.center_angle, angle_steers, self.angle_steers_des, angle_offset, \
           self.angle_steers_des_mpc, cur_Steer_Ratio, CP.steerKf / ratioFactor, CP.steerKpV[0] / ratioFactor, CP.steerKiV[0] / ratioFactor, CP.steerRateCost, PL.PP.l_prob, \
