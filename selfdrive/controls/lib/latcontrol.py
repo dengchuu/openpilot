@@ -52,6 +52,9 @@ class LatControl(object):
     self.angle_steers_des_time = 0.0
     self.avg_angle_steers = 0.0
     self.projected_angle_steers = 0.0
+    self.ratioScale = 100.0            # Multiplier for variable steering ratio
+    self.ratioExp = 2.8                # Exponential coefficient for variable steering assist (torque)
+    self.ratioAdjust = 1.0            # Fudge factor to preserve existing tuning parameters
 
     # variables for dashboarding
     self.context = zmq.Context()
@@ -92,6 +95,11 @@ class LatControl(object):
   def update(self, active, v_ego, angle_steers, angle_rate, steer_override, d_poly, angle_offset, CP, VM, PL):
     self.mpc_updated = False
 
+    # Calculate steering ratio adjustment for current steering angle.  Usually highest numerical value in center
+    self.ratioFactor = self.ratioAdjust - self.ratioScale * abs(angle_steers / 100.) ** self.ratioExp
+    self.ratioTorqueFactor = 1.0 / self.ratioAdjust
+    cur_steer_ratio = CP.steerRatio * self.ratioFactor
+
     # TODO: this creates issues in replay when rewinding time: mpc won't run
     if self.last_mpc_ts < PL.last_md_ts:
       cur_time = sec_since_boot()
@@ -114,7 +122,7 @@ class LatControl(object):
       self.p_poly = libmpc_py.ffi.new("double[4]", list(PL.PP.p_poly))
 
       # account for actuation delay and the age of the plan
-      self.cur_state = calc_states_after_delay(self.cur_state, v_ego, self.projected_angle_steers, self.curvature_factor, CP.steerRatio, total_delay)
+      self.cur_state = calc_states_after_delay(self.cur_state, v_ego, self.projected_angle_steers, self.curvature_factor, cur_steer_ratio, total_delay)
 
       v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
       self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
@@ -127,8 +135,8 @@ class LatControl(object):
       self.mpc_nans = np.any(np.isnan(list(self.mpc_solution[0].delta)))
       if not self.mpc_nans:
         self.mpc_angles = [self.angle_steers_des,
-                          float(math.degrees(self.mpc_solution[0].delta[1] * CP.steerRatio) + angle_offset),
-                          float(math.degrees(self.mpc_solution[0].delta[2] * CP.steerRatio) + angle_offset)]
+                          float(math.degrees(self.mpc_solution[0].delta[1] * cur_steer_ratio) + angle_offset),
+                          float(math.degrees(self.mpc_solution[0].delta[2] * cur_steer_ratio) + angle_offset)]
 
         self.mpc_times = [self.angle_steers_des_time,
                         float(self.last_mpc_ts / 1000000000.0) + _DT_MPC,
@@ -137,7 +145,7 @@ class LatControl(object):
         self.angle_steers_des_mpc = self.mpc_angles[1]
       else:
         self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, CP.steerRateCost)
-        self.cur_state[0].delta = math.radians(angle_steers) / CP.steerRatio
+        self.cur_state[0].delta = math.radians(angle_steers) / cur_steer_ratio
 
         if cur_time > self.last_cloudlog_t + 5.0:
           self.last_cloudlog_t = cur_time
@@ -154,7 +162,7 @@ class LatControl(object):
       self.pid.reset()
       self.angle_steers_des = angle_steers
       self.avg_angle_steers = angle_steers
-      self.cur_state[0].delta = math.radians(angle_steers - angle_offset) / CP.steerRatio
+      self.cur_state[0].delta = math.radians(angle_steers - angle_offset) / cur_steer_ratio
     else:
       cur_time = sec_since_boot()
 
@@ -162,7 +170,7 @@ class LatControl(object):
       self.angle_steers_des = np.interp(cur_time, self.mpc_times, self.mpc_angles)
       self.angle_steers_des_time = cur_time
       self.avg_angle_steers = (4.0 * self.avg_angle_steers + angle_steers) / 5.0
-      self.cur_state[0].delta = math.radians(self.angle_steers_des - angle_offset) / CP.steerRatio
+      self.cur_state[0].delta = math.radians(self.angle_steers_des - angle_offset) / cur_steer_ratio
 
       # Determine the target steer rate for desired angle, but prevent the acceleration limit from being exceeded
       # Restricting the steer rate creates the resistive component needed for resonance
@@ -197,7 +205,7 @@ class LatControl(object):
       deadzone = 0.0
 
       # Use projected desired and actual angles instead of "current" values, in order to make PI more reactive (for resonance)
-      output_steer = self.pid.update(projected_angle_steers_des, self.projected_angle_steers, check_saturation=(v_ego > 10), override=steer_override,
+      output_steer = self.ratioTorqueFactor * self.pid.update(projected_angle_steers_des, self.projected_angle_steers, check_saturation=(v_ego > 10), override=steer_override,
                                      feedforward=self.feed_forward, speed=v_ego, deadzone=deadzone)
 
       # Hide angle error if being overriden
