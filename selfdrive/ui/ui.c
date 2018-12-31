@@ -2461,8 +2461,8 @@ int main() {
   const int EON = (access("/EON", F_OK) != -1);
   const int LEON = is_leon();
 
-  const float BRIGHTNESS_B = LEON? 10.0 : 75.0;
-  const float BRIGHTNESS_M = LEON? 2.6 : 20.0;
+  const float BRIGHTNESS_B = LEON? 10.0 : 5.0;
+  const float BRIGHTNESS_M = LEON? 2.6 : 1.3;
 
   #define NEO_BRIGHTNESS 100
 
