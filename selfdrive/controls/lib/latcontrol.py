@@ -39,8 +39,8 @@ class LatControl(object):
     self.last_cloudlog_t = 0.0
     self.setup_mpc(CP.steerRateCost)
     self.smooth_factor = 2.0 * CP.steerActuatorDelay / _DT      # Multiplier for inductive component (feed forward)
-    self.projection_factor = 1.0 * CP.steerActuatorDelay      #  Mutiplier for reactive component (PI)
-    self.accel_limit = 1.0                                 # Desired acceleration limit to prevent "whip steer" (resistive component)
+    self.projection_factor = 0.5 * _DT                        #  Mutiplier for reactive component (PI)
+    self.accel_limit = 2.0                                 # Desired acceleration limit to prevent "whip steer" (resistive component)
     self.ff_angle_factor = 0.5         # Kf multiplier for angle-based feed forward
     self.ff_rate_factor = 5.0         # Kf multiplier for rate-based feed forward
     self.prev_angle_rate = 0
@@ -111,7 +111,7 @@ class LatControl(object):
       accelerated_angle_rate = 2.0 * angle_rate - self.prev_angle_rate
 
       # Determine future angle steers using accelerated steer rate
-      self.projected_angle_steers = float(angle_steers) + self.projection_factor * float(accelerated_angle_rate)
+      self.projected_angle_steers = float(angle_steers) + CP.steerActuatorDelay * float(accelerated_angle_rate)
 
       # Determine a proper delay time that includes the model's processing time, which is variable
       plan_age = cur_time - float(self.last_mpc_ts / 1000000000.0)
