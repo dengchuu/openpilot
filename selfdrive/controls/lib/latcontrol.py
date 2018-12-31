@@ -54,7 +54,7 @@ class LatControl(object):
     self.projected_angle_steers = 0.0
     self.ratioScale = 100.0            # Multiplier for variable steering ratio
     self.ratioExp = 2.8                # Exponential coefficient for variable steering assist (torque)
-    self.ratioAdjust = 1.0            # Fudge factor to preserve existing tuning parameters
+    self.ratioOffset = 0.9             # Fudge factor to preserve existing tuning parameters
 
     # variables for dashboarding
     self.context = zmq.Context()
@@ -96,9 +96,10 @@ class LatControl(object):
     self.mpc_updated = False
 
     # Calculate steering ratio adjustment for current steering angle.  Usually highest numerical value in center
-    self.ratioFactor = self.ratioAdjust - self.ratioScale * abs(angle_steers / 100.) ** self.ratioExp
-    self.ratioTorqueFactor = 1.0 / self.ratioAdjust
-    cur_steer_ratio = CP.steerRatio * self.ratioFactor
+    self.ratioFactor = self.ratioScale * abs(angle_steers / 100.) ** self.ratioExp
+    self.ratioAngleFactor = self.ratioOffset - self.ratioFactor
+    self.ratioTorqueFactor = self.ratioOffset + self.ratioFactor
+    cur_steer_ratio = CP.steerRatio * self.ratioAngleFactor
 
     # TODO: this creates issues in replay when rewinding time: mpc won't run
     if self.last_mpc_ts < PL.last_md_ts:
