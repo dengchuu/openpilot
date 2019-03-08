@@ -26,6 +26,27 @@ def apply_deadzone(angle, deadzone):
 
 class LatControl(object):
   def __init__(self, CP):
+    self.write_conf = False
+    if self.reactance == -1:
+      kegman.conf['react'] = str(CP.steerReactance)
+      self.write_conf = True
+    if self.inductance == -1:
+      kegman.conf['damp'] = str(CP.steerInductance)
+      self.write_conf = True
+    if self.resistance == -1:
+      kegman.conf['resist'] = str(CP.steerResistance)
+      self.write_conf = True
+    if self.steerKpV == -1:
+      kegman.conf['KpV'] = CP.steerKpV
+      self.write_conf = True
+    if self.steerKiV == -1:
+      kegman.conf['KiV'] = CP.steerKiV
+      self.write_conf = True
+          
+    if self.write_conf:
+      kegman.write_config(kegman.conf)
+    
+    
     self.mpc_frame = 0
     if CP.steerResistance > 0 and CP.steerReactance >= 0 and CP.steerInductance > 0:
       self.smooth_factor = CP.steerInductance * 2.0 * CP.steerActuatorDelay / _DT    # Multiplier for inductive component (feed forward)
@@ -75,31 +96,6 @@ class LatControl(object):
         self.resistance = float(kegman.conf['resist'])
         self.steerKpV = float(kegman.conf['KpV'])
         self.steerKiV = float(kegman.conf['KiV'])
-        
-        self.write_conf = False
-        if self.reactance == -1:
-          self.reactance = CP.steerReactance
-          kegman.conf['react'] = str(self.reactance)
-          self.write_conf = True
-        if self.inductance == -1:
-          self.inductance = CP.steerInductance
-          kegman.conf['damp'] = str(self.inductance)
-          self.write_conf = True
-        if self.resistance == -1:
-          self.resistance = CP.steerResistance
-          kegman.conf['resist'] = str(self.resistance)
-          self.write_conf = True
-        if self.steerKpV == -1:
-          self.steerKpV = CP.steerKpV
-          kegman.conf['KpV'] = self.steerKpV
-          self.write_conf = True
-        if self.steerKiV == -1:
-          self.steerKiV = CP.steerKiV
-          kegman.conf['KiV'] = self.steerKiV
-          self.write_conf = True
-          
-        if self.write_conf:
-          kegman.write_config(kegman.conf)
           
         self.accel_limit = 2.0 / self.resistance
         self.projection_factor = self.reactance * CP.steerActuatorDelay / 2.0
