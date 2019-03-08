@@ -64,7 +64,7 @@ class LatControl(object):
     self.pid.reset()
 
     
-  def live_tune(self, CP, PL):
+  def live_tune(self, CP):
     # live tuning through /data/openpilot/tune.py overrides interface.py settings
     kegman = kegman_conf() 
     if kegman.conf['tuneGernby'] == "1":
@@ -74,13 +74,13 @@ class LatControl(object):
 
       self.accel_limit = 2.0 / self.resistance
       self.projection_factor = self.reactance * CP.steerActuatorDelay / 2.0
-      self.pid._k_i = ([0.], [self.KiV * _DT / self.projection_factor])
+      #self.pid._k_i = ([0.], [self.KiV * _DT / self.projection_factor])
       self.smooth_factor = self.inductance * 2.0 * CP.steerActuatorDelay / _DT
 
     
   def update(self, active, v_ego, angle_steers, angle_rate, angle_offset, steer_override, CP, VM, path_plan):
 
-    self.live_tune(CP, PL)  
+    self.live_tune(CP)  
     if angle_rate == 0.0 and self.calculate_rate:
       if angle_steers != self.prev_angle_steers:
         self.steer_counter_prev = self.steer_counter
