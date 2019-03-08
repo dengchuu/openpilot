@@ -78,15 +78,20 @@ class LatControl(object):
         
         if self.reactance == -1:
           self.reactance = CP.steerReactance
+          kegman.conf['react'] = str(self.reactance)
         if self.inductance == -1:
           self.inductance = CP.steerInductance
+          kegman.conf['damp'] = str(self.inductance)
         if self.resistance == -1:
           self.resistance = CP.steerResistance
+          kegman.conf['resist'] = str(self.resistance)
         if self.steerKpV == -1:
           self.steerKpV = CP.steerKpV
+          kegman.conf['KpV'] = self.steerKpV
         if self.steerKiV == -1:
           self.steerKiV = CP.steerKiV
-        
+          kegman.conf['KiV'] = self.steerKiV
+          
         self.accel_limit = 2.0 / self.resistance
         self.projection_factor = self.reactance * CP.steerActuatorDelay / 2.0
         self.smooth_factor = self.inductance * 2.0 * CP.steerActuatorDelay / _DT
