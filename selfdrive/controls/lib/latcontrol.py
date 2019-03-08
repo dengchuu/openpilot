@@ -4,9 +4,11 @@ from common.realtime import sec_since_boot
 from cereal import car
 import math
 import numpy as np
+from selfdrive.kegman_conf import kegman_conf
 
 _DT = 0.01    # 100Hz
 _DT_MPC = 0.05  # 20Hz
+kegman = kegman_conf()
 
 
 def get_steer_max(CP, v_ego):
@@ -25,7 +27,14 @@ def apply_deadzone(angle, deadzone):
 
 class LatControl(object):
   def __init__(self, CP):
-
+    
+    # live tuning through /data/openpilot/tune.py overrides interface.py settings
+    if kegman.conf['tuneGernby'] == "1":
+      kegman = kegman_conf()   # Re-read /data/kegman.json to account for live changes
+      CP.steerReactance = float(kegman.conf['react']) 
+      CP.steerInductance = float(kegman.conf['damp'])
+      CP.steerResistance = float(kegman.conf['resist'])
+    
     if CP.steerResistance > 0 and CP.steerReactance >= 0 and CP.steerInductance > 0:
       self.smooth_factor = CP.steerInductance * 2.0 * CP.steerActuatorDelay / _DT    # Multiplier for inductive component (feed forward)
       self.projection_factor = CP.steerReactance * CP.steerActuatorDelay / 2.0       # Mutiplier for reactive component (PI)
