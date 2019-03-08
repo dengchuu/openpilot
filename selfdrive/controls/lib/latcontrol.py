@@ -26,6 +26,7 @@ def apply_deadzone(angle, deadzone):
 
 class LatControl(object):
   def __init__(self, CP):
+    '''
     self.write_conf = False
     if self.reactance == -1:
       kegman.conf['react'] = str(CP.steerReactance)
@@ -45,7 +46,7 @@ class LatControl(object):
           
     if self.write_conf:
       kegman.write_config(kegman.conf)
-    
+    '''
     
     self.mpc_frame = 0
     if CP.steerResistance > 0 and CP.steerReactance >= 0 and CP.steerInductance > 0:
