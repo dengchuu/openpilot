@@ -66,7 +66,7 @@ class LatControl(object):
     
   def live_tune(self, CP):
     self.mpc_frame += 1
-    if self.mpc_frame % 40 == 0:
+    if self.mpc_frame % 300 == 0:
       # live tuning through /data/openpilot/tune.py overrides interface.py settings
       kegman = kegman_conf() 
       if kegman.conf['tuneGernby'] == "1":
