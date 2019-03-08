@@ -20,10 +20,11 @@ class kegman_conf():
  
       if "tuneGernby" not in self.config:
         self.config.update({"tuneGernby":"0"})
-        self.config.update({"react":"1.0"})
-        self.config.update({"damp":"1.0"})
-        self.config.update({"resist":"0.5"})
-        self.config.update({"e2front":"0.0"})        
+        self.config.update({"react":"-1"})
+        self.config.update({"damp":"-1"})
+        self.config.update({"resist":"-1"})
+        self.config.update({"KpV":"-1"})
+        self.config.update({"KiV":"-1"})    
         self.element_updated = True 
       
       # Force update battery charge limits to higher values for Big Model
