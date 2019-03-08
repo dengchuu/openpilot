@@ -11,6 +11,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.honda.carstate import CarState, get_can_parser, get_cam_can_parser
 from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, AUDIO_HUD, VISUAL_HUD
 from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V_FOLLOWING
+from selfdrive.kegman_conf import kegman_conf
 
 try:
   from selfdrive.car.honda.carcontroller import CarController
@@ -348,6 +349,14 @@ class CarInterface(object):
 
     else:
       raise ValueError("unsupported car %s" % candidate)
+    
+    kegman = kegman_conf()
+    if kegman.conf['tuneGernby'] == "1":
+      ret.steerReactance = float(kegman.conf['react'])
+      ret.steerInductance = float(kegman.conf['damp'])
+      ret.steerResistance = float(kegman.conf['resist'])
+      ret.eonToFront = float(kegman.conf['e2front'])
+    
 
     ret.steerControlType = car.CarParams.SteerControlType.torque
 
