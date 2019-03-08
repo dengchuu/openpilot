@@ -39,8 +39,8 @@ class kegman_conf():
     else:
       self.config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"85", "battChargeMax":"90", \
                      "wheelTouchSeconds":"180", "battPercOff":"25", "carVoltageMinEonShutdown":"11800", \
-                     "brakeStoppingTarget":"0.25", "tuneGernby":"0", "react":"1.0", "damp":"1.0", \
-                     "resist":"0.5", "e2front":"0.0"}
+                     "brakeStoppingTarget":"0.25", "tuneGernby":"0", "react":"-1", "damp":"-1", \
+                     "resist":"-1", "KpV":"-1", "KiV":"-1"}
       self.write_config(self.config)
     return self.config
 
