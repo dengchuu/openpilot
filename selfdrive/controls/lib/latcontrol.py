@@ -80,6 +80,7 @@ class LatControl(object):
     
   def update(self, active, v_ego, angle_steers, angle_rate, angle_offset, steer_override, CP, VM, path_plan):
 
+    self.live_tune(CP, PL)  
     if angle_rate == 0.0 and self.calculate_rate:
       if angle_steers != self.prev_angle_steers:
         self.steer_counter_prev = self.steer_counter
