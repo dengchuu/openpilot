@@ -65,12 +65,14 @@ class LatControl(object):
 
     
   def live_tune(self, CP):
-    # live tuning through /data/openpilot/tune.py overrides interface.py settings
-    kegman = kegman_conf() 
-    if kegman.conf['tuneGernby'] == "1":
-      self.reactance = float(kegman.conf['react']) 
-      self.inductance = float(kegman.conf['damp'])
-      self.resistance = float(kegman.conf['resist'])
+    self.mpc_frame += 1
+    if self.mpc_frame % 40 == 0:
+      # live tuning through /data/openpilot/tune.py overrides interface.py settings
+      kegman = kegman_conf() 
+      if kegman.conf['tuneGernby'] == "1":
+        self.reactance = float(kegman.conf['react']) 
+        self.inductance = float(kegman.conf['damp'])
+        self.resistance = float(kegman.conf['resist'])
 
       self.accel_limit = 2.0 / self.resistance
       self.projection_factor = self.reactance * CP.steerActuatorDelay / 2.0
