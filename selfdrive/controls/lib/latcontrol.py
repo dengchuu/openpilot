@@ -96,7 +96,7 @@ class LatControl(object):
         KiV = [np.interp(25.0, CP.steerKiBP, self.steerKiV)]
         self.pid = PIController(([0.], KpV),
                                 ([0.], KiV),
-                                k_f=self.steerKf, pos_limit=1.0)
+                                k_f=CP.steerKf, pos_limit=1.0)
 
     
   def update(self, active, v_ego, angle_steers, angle_rate, angle_offset, steer_override, CP, VM, path_plan):
