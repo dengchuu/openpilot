@@ -26,7 +26,7 @@ def apply_deadzone(angle, deadzone):
 
 class LatControl(object):
   def __init__(self, CP):
-    
+    self.mpc_frame = 0
     if CP.steerResistance > 0 and CP.steerReactance >= 0 and CP.steerInductance > 0:
       self.smooth_factor = CP.steerInductance * 2.0 * CP.steerActuatorDelay / _DT    # Multiplier for inductive component (feed forward)
       self.projection_factor = CP.steerReactance * CP.steerActuatorDelay / 2.0       # Mutiplier for reactive component (PI)
