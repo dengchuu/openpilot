@@ -91,7 +91,7 @@ while True:
     kegman.write_config(kegman.conf)
     time.sleep(button_delay)
     
-   elif (char == "0"):
+  elif (char == "0"):
     kegman.conf[param[j]] = "0"
     kegman.write_config(kegman.conf)
     time.sleep(button_delay)
