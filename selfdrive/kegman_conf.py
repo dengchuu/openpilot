@@ -23,8 +23,8 @@ class kegman_conf():
         self.config.update({"react":"-1"})
         self.config.update({"damp":"-1"})
         self.config.update({"resist":"-1"})
-        self.config.update({"KpV":"-1"})
-        self.config.update({"KiV":"-1"})    
+        self.config.update({"Kp":"-1"})
+        self.config.update({"Ki":"-1"})    
         self.element_updated = True 
       
       # Force update battery charge limits to higher values for Big Model
@@ -40,7 +40,7 @@ class kegman_conf():
       self.config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"60", "battChargeMax":"70", \
                      "wheelTouchSeconds":"180", "battPercOff":"25", "carVoltageMinEonShutdown":"11800", \
                      "brakeStoppingTarget":"0.25", "tuneGernby":"0", "react":"-1", "damp":"-1", \
-                     "resist":"-1", "KpV":"-1", "KiV":"-1"}
+                     "resist":"-1", "Kp":"-1", "Ki":"-1"}
       self.write_config(self.config)
     return self.config
 
