@@ -96,8 +96,8 @@ class LatControl(object):
         self.reactance = float(kegman.conf['react']) 
         self.inductance = float(kegman.conf['damp'])
         self.resistance = float(kegman.conf['resist'])
-        #self.steerKpV = float(kegman.conf['Kp'])
-        #self.steerKiV = float(kegman.conf['Ki'])
+        self.steerKpV = np.array([float(kegman.conf['Kp'])])
+        self.steerKiV = np.array([float(kegman.conf['Ki'])])
           
         self.accel_limit = 2.0 / self.resistance
         self.projection_factor = self.reactance * CP.steerActuatorDelay / 2.0
