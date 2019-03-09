@@ -40,10 +40,10 @@ class LatControl(object):
       kegman.conf['resist'] = str(CP.steerResistance)
       self.write_conf = True
     if kegman.conf['Kp'] == "-1":
-      kegman.conf['Kp'] = str(CP.steerKpV[0])
+      kegman.conf['Kp'] = str(round(CP.steerKpV[0],2))
       self.write_conf = True
     if kegman.conf['Ki'] == "-1":
-      kegman.conf['Ki'] = str(CP.steerKiV[0])
+      kegman.conf['Ki'] = str(round(CP.steerKiV[0],2))
       self.write_conf = True
           
     if self.write_conf:
