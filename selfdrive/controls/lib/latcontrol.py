@@ -26,10 +26,10 @@ def apply_deadzone(angle, deadzone):
 
 class LatControl(object):
   def __init__(self, CP):
-    
+
     kegman = kegman_conf()
     self.write_conf = False
-    
+
     if kegman.conf['react'] == "-1":
       kegman.conf['react'] = str(CP.steerReactance)
       self.write_conf = True
@@ -45,10 +45,10 @@ class LatControl(object):
     if kegman.conf['Ki'] == "-1":
       kegman.conf['Ki'] = str(round(CP.steerKiV[0],2))
       self.write_conf = True
-          
+
     if self.write_conf:
       kegman.write_config(kegman.conf)
-    
+
     self.mpc_frame = 0
     if CP.steerResistance > 0 and CP.steerReactance >= 0 and CP.steerInductance > 0:
       self.smooth_factor = CP.steerInductance * 2.0 * CP.steerActuatorDelay / _DT    # Multiplier for inductive component (feed forward)
@@ -86,36 +86,32 @@ class LatControl(object):
   def reset(self):
     self.pid.reset()
 
-    
+
   def live_tune(self, CP):
     self.mpc_frame += 1
     if self.mpc_frame % 300 == 0:
       # live tuning through /data/openpilot/tune.py overrides interface.py settings
-      kegman = kegman_conf() 
+      kegman = kegman_conf()
       if kegman.conf['tuneGernby'] == "1":
-        self.reactance = float(kegman.conf['react']) 
+        self.reactance = float(kegman.conf['react'])
         self.inductance = float(kegman.conf['damp'])
         self.resistance = float(kegman.conf['resist'])
         self.steerKpV = np.array([float(kegman.conf['Kp'])])
         self.steerKiV = np.array([float(kegman.conf['Ki'])])
-          
         self.accel_limit = 2.0 / self.resistance
         self.projection_factor = self.reactance * CP.steerActuatorDelay / 2.0
         self.smooth_factor = self.inductance * 2.0 * CP.steerActuatorDelay / _DT
-      
-        # Eliminate break-points, since they aren't needed (and would cause problems for resonance)
-        #KpV = [np.interp(25.0, CP.steerKpBP, self.steerKpV)]
-        KpV = [np.interp(25.0, CP.steerKpBP, self.steerKpV)]
-        #KiV = [np.interp(25.0, CP.steerKiBP, self.steerKiV)]
-        KiV = [np.interp(25.0, CP.steerKiBP, self.steerKiV)]
-        self.pid = PIController(([0.], KpV),
-                                ([0.], KiV),
-                                k_f=CP.steerKf, pos_limit=1.0)
 
-    
+        # Eliminate break-points, since they aren't needed (and would cause problems for resonance)
+        KpV = [np.interp(25.0, CP.steerKpBP, self.steerKpV)]
+        KiV = [np.interp(25.0, CP.steerKiBP, self.steerKiV)]
+        self.pid._k_i = ([0.], KiV)
+        self.pid._k_p = ([0.], KpV)
+        print(self.reactance, self.inductance, self.resistance, self.pid._k_i, self.pid._k_p)
+
+
   def update(self, active, v_ego, angle_steers, angle_rate, angle_offset, steer_override, CP, VM, path_plan):
 
-    self.live_tune(CP)  
     if angle_rate == 0.0 and self.calculate_rate:
       if angle_steers != self.prev_angle_steers:
         self.steer_counter_prev = self.steer_counter
@@ -139,6 +135,7 @@ class LatControl(object):
     self.angle_steers_des_time = cur_time
 
     if v_ego < 0.3 or not active:
+      self.live_tune(CP)
       output_steer = 0.0
       self.feed_forward = 0.0
       self.pid.reset()
