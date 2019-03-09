@@ -38,7 +38,7 @@ button_delay = 0.2
 kegman = kegman_conf()
 kegman.conf['tuneGernby'] = "1"
 kegman.write_config(kegman.conf)
-param = ["react", "damp", "resist", "Kp", "Ki"]
+param = ["tuneGernby", "react", "damp", "resist", "Kp", "Ki"]
 
 j = 0
 while True:
@@ -54,7 +54,10 @@ while True:
   print ("press z to decrease by 0.01")
   print ("press c to decrease by 0.05")
   print ("press b to decrease by 0.1")
-  print ("press m for next parameter")
+  print ("press z to make the value 0")
+  print ("press o to make the value 1")
+  print ("press SPACE for next parameter")
+  print ("press m for previous parameter")
   print ("press q to quit") 
   
   char  = getch()
@@ -88,11 +91,17 @@ while True:
     kegman.write_config(kegman.conf)
     time.sleep(button_delay)
 
-  elif (char == "m"):
+  elif (char == " "):
     if j < len(param) - 1:
       j = j + 1
     else:
       j = 0
+    
+  elif (char == "m"):
+    if j > 0:
+      j = j - 1
+    else:
+      j = len(param) - 1
 
   elif (char == "q"):
     break
