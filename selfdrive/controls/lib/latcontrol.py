@@ -26,6 +26,7 @@ def apply_deadzone(angle, deadzone):
 
 class LatControl(object):
   def __init__(self, CP):
+    '''
     kegman = kegman_conf()
     self.write_conf = False
     
@@ -47,7 +48,7 @@ class LatControl(object):
           
     if self.write_conf:
       kegman.write_config(kegman.conf)
-    
+    '''
     self.mpc_frame = 0
     if CP.steerResistance > 0 and CP.steerReactance >= 0 and CP.steerInductance > 0:
       self.smooth_factor = CP.steerInductance * 2.0 * CP.steerActuatorDelay / _DT    # Multiplier for inductive component (feed forward)
