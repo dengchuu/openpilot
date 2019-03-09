@@ -32,16 +32,16 @@ class LatControl(object):
     if kegman.conf['react'] == "-1":
       kegman.conf['react'] = str(CP.steerReactance)
       self.write_conf = True
-    if kegman.conf['damp'] == -1:
+    if kegman.conf['damp'] == "-1":
       kegman.conf['damp'] = str(CP.steerInductance)
       self.write_conf = True
-    if kegman.conf['resist'] == -1:
+    if kegman.conf['resist'] == "-1":
       kegman.conf['resist'] = str(CP.steerResistance)
       self.write_conf = True
-    if kegman.conf['Kp'] == -1:
+    if kegman.conf['Kp'] == "-1":
       kegman.conf['Kp'] = CP.steerKpV
       self.write_conf = True
-    if kegman.conf['Ki'] == -1:
+    if kegman.conf['Ki'] == "-1":
       kegman.conf['Ki'] = CP.steerKiV
       self.write_conf = True
           
