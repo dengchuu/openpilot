@@ -36,8 +36,8 @@ def getch():
 button_delay = 0.2
 
 kegman = kegman_conf()
-kegman.conf['tuneGernby'] = "1"
-kegman.write_config(kegman.conf)
+#kegman.conf['tuneGernby'] = "1"
+#kegman.write_config(kegman.conf)
 param = ["tuneGernby", "react", "damp", "resist", "Kp", "Ki"]
 
 j = 0
