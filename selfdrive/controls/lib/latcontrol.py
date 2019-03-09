@@ -96,16 +96,18 @@ class LatControl(object):
         self.reactance = float(kegman.conf['react']) 
         self.inductance = float(kegman.conf['damp'])
         self.resistance = float(kegman.conf['resist'])
-        self.steerKpV = float(kegman.conf['Kp'])
-        self.steerKiV = float(kegman.conf['Ki'])
+        #self.steerKpV = float(kegman.conf['Kp'])
+        #self.steerKiV = float(kegman.conf['Ki'])
           
         self.accel_limit = 2.0 / self.resistance
         self.projection_factor = self.reactance * CP.steerActuatorDelay / 2.0
         self.smooth_factor = self.inductance * 2.0 * CP.steerActuatorDelay / _DT
       
         # Eliminate break-points, since they aren't needed (and would cause problems for resonance)
-        KpV = [np.interp(25.0, CP.steerKpBP, self.steerKpV)]
-        KiV = [np.interp(25.0, CP.steerKiBP, self.steerKiV)]
+        #KpV = [np.interp(25.0, CP.steerKpBP, self.steerKpV)]
+        KpV = [np.interp(25.0, CP.steerKpBP, CP.steerKpV)]
+        #KiV = [np.interp(25.0, CP.steerKiBP, self.steerKiV)]
+        KiV = [np.interp(25.0, CP.steerKiBP, CP.steerKiV)]
         self.pid = PIController(([0.], KpV),
                                 ([0.], KiV),
                                 k_f=CP.steerKf, pos_limit=1.0)
