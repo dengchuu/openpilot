@@ -105,9 +105,9 @@ class LatControl(object):
       
         # Eliminate break-points, since they aren't needed (and would cause problems for resonance)
         #KpV = [np.interp(25.0, CP.steerKpBP, self.steerKpV)]
-        KpV = [np.interp(25.0, CP.steerKpBP, CP.steerKpV)]
+        KpV = [np.interp(25.0, CP.steerKpBP, self.steerKpV)]
         #KiV = [np.interp(25.0, CP.steerKiBP, self.steerKiV)]
-        KiV = [np.interp(25.0, CP.steerKiBP, CP.steerKiV)]
+        KiV = [np.interp(25.0, CP.steerKiBP, self.steerKiV)]
         self.pid = PIController(([0.], KpV),
                                 ([0.], KiV),
                                 k_f=CP.steerKf, pos_limit=1.0)
