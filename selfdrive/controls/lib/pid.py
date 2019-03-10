@@ -20,7 +20,7 @@ class PIController(object):
     self.neg_limit = neg_limit
 
     self.sat_count_rate = 1.0 / rate
-    self.i_unwind_rate = 0.3 / rate
+    self.i_unwind_rate = 30.0 / rate
     self.i_rate = 1.0 / rate
     self.sat_limit = sat_limit
     self.convert = convert

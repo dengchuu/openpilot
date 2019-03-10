@@ -261,7 +261,7 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
                                                      CS.steeringPressed, CP, VM, path_plan)
 
   # Send a "steering required alert" if saturation count has reached the limit
-  if LaC.sat_flag and CP.steerLimitAlert and CS.lkMode and not CS.leftBlinker and not CS.rightBlinker:
+  if LaC.sat_flag and CP.steerLimitAlert:
     AM.add("steerSaturated", enabled)
 
   # Parse permanent warnings to display constantly
@@ -335,7 +335,7 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     "active": isActive(state),
     "vEgo": CS.vEgo,
     "vEgoRaw": CS.vEgoRaw,
-    "angleSteers": CS.steeringAngle,
+    "angleSteers": LaC.dampened_angle_steers,
     "curvature": VM.calc_curvature(CS.steeringAngle * CV.DEG_TO_RAD, CS.vEgo),
     "steerOverride": CS.steeringPressed,
     "state": state,
@@ -459,7 +459,7 @@ def controlsd_thread(gctx=None, rate=100):
   path_plan = messaging.new_message()
   path_plan.init('pathPlan')
 
-  rk = Ratekeeper(rate, print_delay_threshold=1. / 1000)
+  rk = Ratekeeper(rate, print_delay_threshold=2. / 1000)
   controls_params = params.get("ControlsParams")
   # Read angle offset from previous drive
   if controls_params is not None:
@@ -503,7 +503,7 @@ def controlsd_thread(gctx=None, rate=100):
                     v_cruise_kph_last, AM, rk, driver_status,
                     LaC, LoC, VM, angle_offset, passive, is_metric, cal_perc)
 
-    rk.keep_time(1. / 10000)  # Run at 100Hz
+    rk.keep_time(2. / 10000)   # use "soft" time keeping for data OUT to vehicle
     prof.checkpoint("State Control")
 
     # Publish data

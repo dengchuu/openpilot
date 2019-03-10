@@ -50,33 +50,19 @@ class LatControl(object):
       kegman.write_config(kegman.conf)
 
     self.mpc_frame = 0
-    if CP.steerResistance > 0 and CP.steerReactance >= 0 and CP.steerInductance > 0:
-      self.smooth_factor = CP.steerInductance * 2.0 * CP.steerActuatorDelay / _DT    # Multiplier for inductive component (feed forward)
-      self.projection_factor = CP.steerReactance * CP.steerActuatorDelay / 2.0       # Mutiplier for reactive component (PI)
-      self.accel_limit = 2.0 / CP.steerResistance                                    # Desired acceleration limit to prevent "whip steer" (resistive component)
-      self.ff_angle_factor = 1.0                                                     # Kf multiplier for angle-based feed forward
-      self.ff_rate_factor = 10.0                                                      # Kf multiplier for rate-based feed forward
-      # Eliminate break-points, since they aren't needed (and would cause problems for resonance)
-      KpV = [np.interp(25.0, CP.steerKpBP, CP.steerKpV)]
-      KiV = [np.interp(25.0, CP.steerKiBP, CP.steerKiV)]
-      self.pid = PIController(([0.], KpV),
-                              ([0.], KiV),
-                              k_f=CP.steerKf, pos_limit=1.0)
-    else:
-      self.pid = PIController((CP.steerKpBP, CP.steerKpV),
-                              (CP.steerKiBP, CP.steerKiV),
-                              k_f=CP.steerKf, pos_limit=1.0)
-      self.smooth_factor = 1.0
-      self.projection_factor = 0.0
-      self.accel_limit = 0.0
-      self.ff_angle_factor = 1.0
-      self.ff_rate_factor = 0.0
-    self.last_cloudlog_t = 0.0
-    self.prev_angle_rate = 0
+    self.projection_factor = CP.steerInductance
+    self.response_time = CP.steerReactance / 10.
+    self.smooth_factor = CP.steerInductance / _DT
+    self.ff_angle_factor = 1.0                                                     # Kf multiplier for angle-based feed forward
+    self.ff_rate_factor = 10.0
+    self.dampened_angle_steers = 0.0                                                     # Kf multiplier for rate-based feed forward
+    # Eliminate break-points, since they aren't needed (and would cause problems for resonance)
+    KpV = [np.interp(25.0, CP.steerKpBP, CP.steerKpV)]
+    KiV = [np.interp(25.0, CP.steerKiBP, CP.steerKiV)]
+    self.pid = PIController(([0.], KpV),
+                            ([0.], KiV),
+                            k_f=CP.steerKf, pos_limit=1.0)
     self.feed_forward = 0.0
-    self.last_mpc_ts = 0.0
-    self.angle_steers_des_time = 0.0
-    self.angle_steers_des_mpc = 0.0
     self.steer_counter = 1.0
     self.steer_counter_prev = 0.0
     self.rough_steers_rate = 0.0
@@ -86,28 +72,26 @@ class LatControl(object):
   def reset(self):
     self.pid.reset()
 
-
   def live_tune(self, CP):
     self.mpc_frame += 1
     if self.mpc_frame % 300 == 0:
       # live tuning through /data/openpilot/tune.py overrides interface.py settings
       kegman = kegman_conf()
       if kegman.conf['tuneGernby'] == "1":
-        self.reactance = float(kegman.conf['react'])
-        self.inductance = float(kegman.conf['damp'])
-        self.resistance = float(kegman.conf['resist'])
+        reactance = float(kegman.conf['react']) / 10.
+        inductance = float(kegman.conf['damp'])
         self.steerKpV = np.array([float(kegman.conf['Kp'])])
         self.steerKiV = np.array([float(kegman.conf['Ki'])])
-        self.accel_limit = 2.0 / self.resistance
-        self.projection_factor = self.reactance * CP.steerActuatorDelay / 2.0
-        self.smooth_factor = self.inductance * 2.0 * CP.steerActuatorDelay / _DT
+        self.projection_factor = inductance
+        self.response_time = reactance
+        self.smooth_factor = inductance / _DT
 
         # Eliminate break-points, since they aren't needed (and would cause problems for resonance)
         KpV = [np.interp(25.0, CP.steerKpBP, self.steerKpV)]
         KiV = [np.interp(25.0, CP.steerKiBP, self.steerKiV)]
         self.pid._k_i = ([0.], KiV)
         self.pid._k_p = ([0.], KpV)
-        print(self.reactance, self.inductance, self.resistance, self.pid._k_i, self.pid._k_p)
+        print(self.projection_factor, self.smooth_factor, self.response_time, self.pid._k_i, self.pid._k_p)
 
 
   def update(self, active, v_ego, angle_steers, angle_rate, angle_offset, steer_override, CP, VM, path_plan):
@@ -121,40 +105,20 @@ class LatControl(object):
         self.rough_steers_rate = (self.steer_counter * self.rough_steers_rate) / (self.steer_counter + 1.0)
       self.steer_counter += 1.0
       angle_rate = self.rough_steers_rate
-
-      # Don't use accelerated rate unless it's from CAN
-      accelerated_angle_rate = angle_rate
     else:
       # If non-zero angle_rate is provided, use it instead
       self.calculate_rate = False
-      # Use steering rate from the last 2 samples to estimate acceleration for a likely future steering rate
-      accelerated_angle_rate = 2.0 * angle_rate - self.prev_angle_rate
 
-
-    cur_time = sec_since_boot()
-    self.angle_steers_des_time = cur_time
+    self.live_tune(CP)
 
     if v_ego < 0.3 or not active:
-      self.live_tune(CP)
       output_steer = 0.0
       self.feed_forward = 0.0
       self.pid.reset()
       self.angle_steers_des = angle_steers
     else:
       # Interpolate desired angle between MPC updates
-      self.angle_steers_des = np.interp(cur_time, path_plan.mpcTimes, path_plan.mpcAngles)
-      self.angle_steers_des_time = cur_time
-
-      # Determine the target steer rate for desired angle, but prevent the acceleration limit from being exceeded
-      # Restricting the steer rate creates the resistive component needed for resonance
-      restricted_steer_rate = np.clip(self.angle_steers_des - float(angle_steers) , float(accelerated_angle_rate) - self.accel_limit,
-                                                                                    float(accelerated_angle_rate) + self.accel_limit)
-
-      # Determine projected desired angle that is within the acceleration limit (prevent the steering wheel from jerking)
-      projected_angle_steers_des = self.angle_steers_des + self.projection_factor * restricted_steer_rate
-
-      # Determine future angle steers using accellerated steer rate
-      projected_angle_steers = float(angle_steers) + self.projection_factor * float(accelerated_angle_rate)
+      self.angle_steers_des = np.interp(sec_since_boot() + self.response_time, path_plan.mpcTimes, path_plan.mpcAngles)
 
       steers_max = get_steer_max(CP, v_ego)
       self.pid.pos_limit = steers_max
@@ -162,24 +126,28 @@ class LatControl(object):
       deadzone = 0.0
 
       if CP.steerControlType == car.CarParams.SteerControlType.torque:
-        # Decide which feed forward mode should be used (angle or rate).  Use more dominant mode, but only if conditions are met
-        # Spread feed forward out over a period of time to make it inductive (for resonance)
-        if abs(self.ff_rate_factor * float(restricted_steer_rate)) > abs(self.ff_angle_factor * float(self.angle_steers_des) - float(angle_offset)) - 0.5 \
-            and (abs(float(restricted_steer_rate)) > abs(accelerated_angle_rate) or (float(restricted_steer_rate) < 0) != (accelerated_angle_rate < 0)) \
-            and (float(restricted_steer_rate) < 0) == (float(self.angle_steers_des) - float(angle_offset) - 0.5 < 0):
-          self.feed_forward = (((self.smooth_factor - 1.) * self.feed_forward) + self.ff_rate_factor * v_ego**2 * float(restricted_steer_rate)) / self.smooth_factor
-        elif abs(self.angle_steers_des - float(angle_offset)) > 0.5:
-          self.feed_forward = (((self.smooth_factor - 1.) * self.feed_forward) + self.ff_angle_factor * v_ego**2 \
-                              * float(apply_deadzone(float(self.angle_steers_des) - float(angle_offset), 0.5))) / self.smooth_factor
-        else:
-          self.feed_forward = (((self.smooth_factor - 1.) * self.feed_forward) + 0.0) / self.smooth_factor
+        desired_rate = self.angle_steers_des - float(angle_steers)
+        projected_angle_steers = float(angle_steers) + self.projection_factor * float(angle_rate)
+        self.dampened_angle_steers = ((self.smooth_factor * self.dampened_angle_steers) + projected_angle_steers) / (1. + self.smooth_factor)
 
-        # Use projected desired and actual angles instead of "current" values, in order to make PI more reactive (for resonance)
-        output_steer = self.pid.update(projected_angle_steers_des, projected_angle_steers, check_saturation=(v_ego > 10),
+        # Decide which feed forward mode should be used (angle or rate).  Use more dominant mode, but only if conditions are met
+        angle_feed_forward = self.ff_angle_factor * apply_deadzone(self.angle_steers_des - float(angle_offset), 0.5)
+        rate_feed_forward = self.ff_rate_factor * desired_rate
+        rate_more_significant = abs(rate_feed_forward) > abs(angle_feed_forward)
+        rate_angle_same_direction = (angle_feed_forward < 0) == (rate_feed_forward < 0)
+        more_rate_desired = abs(desired_rate) > abs(angle_rate)
+        rate_other_direction = (desired_rate < 0) != (angle_rate < 0)
+
+        # Spread out feed_forward over the actuator's response time to reduce noise
+        if rate_more_significant and rate_angle_same_direction and (more_rate_desired or rate_other_direction):
+          self.feed_forward = ((self.smooth_factor * self.feed_forward) + v_ego**2 * rate_feed_forward) / (1. + self.smooth_factor)
+        else:
+          self.feed_forward = ((self.smooth_factor * self.feed_forward) + v_ego**2 * angle_feed_forward) / (1. + self.smooth_factor)
+
+        output_steer = self.pid.update(self.angle_steers_des, self.dampened_angle_steers, check_saturation=(v_ego > 10),
                                         override=steer_override, feedforward=self.feed_forward, speed=v_ego, deadzone=deadzone)
 
     self.sat_flag = self.pid.saturated
-    self.prev_angle_rate = angle_rate
     self.prev_angle_steers = angle_steers
 
     # return MPC angle in the unused output (for ALCA)
