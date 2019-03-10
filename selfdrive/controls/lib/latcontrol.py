@@ -98,15 +98,23 @@ class LatControl(object):
         self.resistance = float(kegman.conf['resist'])
         self.steerKpV = np.array([float(kegman.conf['Kp'])])
         self.steerKiV = np.array([float(kegman.conf['Ki'])])
-          
-        self.accel_limit = 2.0 / self.resistance
-        self.projection_factor = self.reactance * CP.steerActuatorDelay / 2.0
-        self.smooth_factor = self.inductance * 2.0 * CP.steerActuatorDelay / _DT
+        
+        if self.resistance > 0 and self.reactance >= 0 and self.inductance > 0:
+          # Turn on Gernby params and tune for them as well as Kp and Ki
+          self.accel_limit = 2.0 / self.resistance
+          self.projection_factor = self.reactance * CP.steerActuatorDelay / 2.0
+          self.smooth_factor = self.inductance * 2.0 * CP.steerActuatorDelay / _DT
+        else:
+          # Turn off Gernby params and only tune for Kp and Ki
+          self.smooth_factor = 1.0
+          self.projection_factor = 0.0
+          self.accel_limit = 0.0
+          self.ff_angle_factor = 1.0
+          self.ff_rate_factor = 0.0
       
         # Eliminate break-points, since they aren't needed (and would cause problems for resonance)
-        #KpV = [np.interp(25.0, CP.steerKpBP, self.steerKpV)]
+        #  Tune for Kp and Ki
         KpV = [np.interp(25.0, CP.steerKpBP, self.steerKpV)]
-        #KiV = [np.interp(25.0, CP.steerKiBP, self.steerKiV)]
         KiV = [np.interp(25.0, CP.steerKiBP, self.steerKiV)]
         self.pid = PIController(([0.], KpV),
                                 ([0.], KiV),
