@@ -38,7 +38,7 @@ button_delay = 0.2
 kegman = kegman_conf()
 #kegman.conf['tuneGernby'] = "1"
 #kegman.write_config(kegman.conf)
-param = ["tuneGernby", "react", "damp", "resist", "Kp", "Ki"]
+param = ["tuneGernby", "react", "damp", "Kp", "Ki"]
 
 j = 0
 while True:
