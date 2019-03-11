@@ -51,7 +51,7 @@ class LatControl(object):
 
     self.mpc_frame = 0
     self.projection_factor = CP.steerInductance
-    self.response_time = CP.steerReactance / 10.
+    self.response_time = CP.steerReactance
     self.smooth_factor = CP.steerInductance / _DT
     self.ff_angle_factor = 1.0                                                     # Kf multiplier for angle-based feed forward
     self.ff_rate_factor = 10.0
@@ -78,7 +78,7 @@ class LatControl(object):
       # live tuning through /data/openpilot/tune.py overrides interface.py settings
       kegman = kegman_conf()
       if kegman.conf['tuneGernby'] == "1":
-        reactance = float(kegman.conf['react']) / 10.
+        reactance = float(kegman.conf['react'])
         inductance = float(kegman.conf['damp'])
         self.steerKpV = np.array([float(kegman.conf['Kp'])])
         self.steerKiV = np.array([float(kegman.conf['Ki'])])
