@@ -343,7 +343,7 @@ class CarInterface(object):
       ret.longitudinalKiV = [0.18, 0.12]
 
     else:
-      raise ValueError("unsupported car %s" % candidate)
+      raise ValueError("unsupported car %s" % candidate)    
 
     ret.steerControlType = car.CarParams.SteerControlType.torque
 

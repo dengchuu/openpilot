@@ -36,9 +36,6 @@ class LatControl(object):
     if kegman.conf['damp'] == "-1":
       kegman.conf['damp'] = str(CP.steerInductance)
       self.write_conf = True
-    if kegman.conf['resist'] == "-1":
-      kegman.conf['resist'] = str(CP.steerResistance)
-      self.write_conf = True
     if kegman.conf['Kp'] == "-1":
       kegman.conf['Kp'] = str(round(CP.steerKpV[0],2))
       self.write_conf = True
@@ -53,9 +50,9 @@ class LatControl(object):
     self.projection_factor = CP.steerInductance
     self.response_time = CP.steerReactance
     self.smooth_factor = CP.steerInductance / _DT
-    self.ff_angle_factor = 1.0                                                     # Kf multiplier for angle-based feed forward
+    self.ff_angle_factor = 1.0
     self.ff_rate_factor = 10.0
-    self.dampened_angle_steers = 0.0                                                     # Kf multiplier for rate-based feed forward
+    self.dampened_angle_steers = 0.0                      
     # Eliminate break-points, since they aren't needed (and would cause problems for resonance)
     KpV = [np.interp(25.0, CP.steerKpBP, CP.steerKpV)]
     KiV = [np.interp(25.0, CP.steerKiBP, CP.steerKiV)]
@@ -96,6 +93,7 @@ class LatControl(object):
 
   def update(self, active, v_ego, angle_steers, angle_rate, angle_offset, steer_override, CP, VM, path_plan):
 
+    self.live_tune(CP)
     if angle_rate == 0.0 and self.calculate_rate:
       if angle_steers != self.prev_angle_steers:
         self.steer_counter_prev = self.steer_counter

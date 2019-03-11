@@ -21,18 +21,18 @@ def print_letters(text):
             output[i] += temp
     return '\n'.join(output)
 import sys, termios, tty, os, time
- 
+
 def getch():
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
     try:
         tty.setraw(sys.stdin.fileno())
         ch = sys.stdin.read(1)
- 
+
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     return ch
- 
+
 button_delay = 0.2
 
 kegman = kegman_conf()
@@ -48,65 +48,71 @@ while True:
   print ""
   print print_letters(kegman.conf[param[j]])
   print ""
-  print ("Press 7 to increase by 0.01")
-  print ("Press 5 to increase by 0.05")
-  print ("Press 3 to increase by 0.1")
-  print ("press u to decrease by 0.01")
-  print ("press t to decrease by 0.05")
-  print ("press e to decrease by 0.1")
+  print ("Press 1, 3, 5, 7 to increase by 0.1, 0.05, 0.01, 0.001")
+  print ("press a, d, g, j to decrease by 0.1, 0.05, 0.01, 0.001")
   print ("press 0 to make the value 0")
-  print ("press 1 to make the value 1")
+  print ("press 1 to make the value L")
   print ("press SPACE for next parameter")
   print ("press m for previous parameter")
-  print ("press q to quit") 
-  
+  print ("press q to quit")
+
   char  = getch()
   if (char == "7"):
+    kegman.conf[param[j]] = str(float(kegman.conf[param[j]]) + 0.001)
+    kegman.write_config(kegman.conf)
+    time.sleep(button_delay)
+
+  if (char == "5"):
     kegman.conf[param[j]] = str(float(kegman.conf[param[j]]) + 0.01)
     kegman.write_config(kegman.conf)
     time.sleep(button_delay)
 
-  elif (char == "5"):
+  elif (char == "3"):
     kegman.conf[param[j]] = str(float(kegman.conf[param[j]]) + 0.05)
     kegman.write_config(kegman.conf)
     time.sleep(button_delay)
 
-  elif (char == "3"):
+  elif (char == "1"):
     kegman.conf[param[j]] = str(float(kegman.conf[param[j]]) + 0.1)
     kegman.write_config(kegman.conf)
     time.sleep(button_delay)
 
-  elif (char == "u"):
+  if (char == "j"):
+    kegman.conf[param[j]] = str(float(kegman.conf[param[j]]) - 0.001)
+    kegman.write_config(kegman.conf)
+    time.sleep(button_delay)
+
+  elif (char == "g"):
     kegman.conf[param[j]] = str(float(kegman.conf[param[j]]) - 0.01)
     kegman.write_config(kegman.conf)
     time.sleep(button_delay)
 
-  elif (char == "t"):
+  elif (char == "d"):
     kegman.conf[param[j]] = str(float(kegman.conf[param[j]]) - 0.05)
     kegman.write_config(kegman.conf)
     time.sleep(button_delay)
 
-  elif (char == "e"):
+  elif (char == "a"):
     kegman.conf[param[j]] = str(float(kegman.conf[param[j]]) - 0.1)
     kegman.write_config(kegman.conf)
     time.sleep(button_delay)
-    
+
   elif (char == "0"):
     kegman.conf[param[j]] = "0"
     kegman.write_config(kegman.conf)
     time.sleep(button_delay)
 
-  elif (char == "1"):
+  elif (char == "l"):
     kegman.conf[param[j]] = "1"
     kegman.write_config(kegman.conf)
-    time.sleep(button_delay)  
+    time.sleep(button_delay)
 
   elif (char == " "):
     if j < len(param) - 1:
       j = j + 1
     else:
       j = 0
-    
+
   elif (char == "m"):
     if j > 0:
       j = j - 1
