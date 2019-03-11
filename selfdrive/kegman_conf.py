@@ -22,7 +22,6 @@ class kegman_conf():
         self.config.update({"tuneGernby":"0"})
         self.config.update({"react":"-1"})
         self.config.update({"damp":"-1"})
-        self.config.update({"resist":"-1"})
         self.config.update({"Kp":"-1"})
         self.config.update({"Ki":"-1"})    
         self.element_updated = True 
