@@ -78,7 +78,7 @@ while True:
     time.sleep(button_delay)
 
   if (char == "j"):
-    kegman.conf[param[j]] = str(float(kegman.conf[param[j]]) + 0.001)
+    kegman.conf[param[j]] = str(float(kegman.conf[param[j]]) - 0.001)
     kegman.write_config(kegman.conf)
     time.sleep(button_delay)    
     
