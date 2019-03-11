@@ -89,6 +89,8 @@ class LatControl(object):
     
   def live_tune(self, CP):
     self.mpc_frame += 1
+    
+    # evaluate only once every 3 seconds or it'll crash because of the storage I/O
     if self.mpc_frame % 300 == 0:
       # live tuning through /data/openpilot/tune.py overrides interface.py settings
       kegman = kegman_conf() 
@@ -119,6 +121,9 @@ class LatControl(object):
         self.pid = PIController(([0.], KpV),
                                 ([0.], KiV),
                                 k_f=CP.steerKf, pos_limit=1.0)
+    else:
+      # revert to default values for Gernby params and Kp and Ki
+      self.__init__(CP)
 
     
   def update(self, active, v_ego, angle_steers, angle_rate, angle_offset, steer_override, CP, VM, path_plan):
