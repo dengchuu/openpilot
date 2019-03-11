@@ -76,10 +76,8 @@ class CarInterface(object):
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
 
-    ret.steerReactance = 1.0
-    ret.steerInductance = 1.0
-    ret.steerResistance = 1.0
-    ret.eonToFront = 0.5
+    ret.steerReactance = 0.025
+    ret.steerInductance = 0.15
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
@@ -92,10 +90,6 @@ class CarInterface(object):
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
       # TODO: Prius seem to have very laggy actuators. Understand if it is lag or hysteresis
       ret.steerActuatorDelay = 0.25
-      ret.steerReactance = 2.5
-      ret.steerInductance = 1.5
-      ret.steerResistance = 0.5
-      ret.eonToFront = 0.0
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       stop_and_go = True if (candidate in CAR.RAV4H) else False
@@ -106,8 +100,6 @@ class CarInterface(object):
       ret.mass = 3650 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
       ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
-      ret.steerReactance = 0.025
-      ret.steerInductance = 0.15
 
     elif candidate == CAR.COROLLA:
       stop_and_go = False
