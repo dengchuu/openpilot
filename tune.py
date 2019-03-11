@@ -48,8 +48,8 @@ while True:
   print ""
   print print_letters(kegman.conf[param[j]])
   print ""
-  print ("Press 1, 3, 5 to increase by 0.1, 0.05, 0.01")
-  print ("press a, d, g to decrease by 0.1, 0.05, 0.01")
+  print ("Press 1, 3, 5, 7 to increase by 0.1, 0.05, 0.01, 0.001")
+  print ("press a, d, g, j to decrease by 0.1, 0.05, 0.01, 0.001")
   print ("press 0 to make the value 0")
   print ("press 1 to make the value L")
   print ("press SPACE for next parameter")
@@ -57,6 +57,11 @@ while True:
   print ("press q to quit") 
   
   char  = getch()
+  if (char == "7"):
+    kegman.conf[param[j]] = str(float(kegman.conf[param[j]]) + 0.001)
+    kegman.write_config(kegman.conf)
+    time.sleep(button_delay)
+    
   if (char == "5"):
     kegman.conf[param[j]] = str(float(kegman.conf[param[j]]) + 0.01)
     kegman.write_config(kegman.conf)
@@ -72,6 +77,11 @@ while True:
     kegman.write_config(kegman.conf)
     time.sleep(button_delay)
 
+  if (char == "j"):
+    kegman.conf[param[j]] = str(float(kegman.conf[param[j]]) + 0.001)
+    kegman.write_config(kegman.conf)
+    time.sleep(button_delay)    
+    
   elif (char == "g"):
     kegman.conf[param[j]] = str(float(kegman.conf[param[j]]) - 0.01)
     kegman.write_config(kegman.conf)
