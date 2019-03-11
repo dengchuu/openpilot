@@ -12,8 +12,8 @@ import selfdrive.messaging as messaging
 
 _DT_MPC = 0.05
 
-def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_ratio, delay, long_camera_offset):
-  states[0].x = max(0.0, v_ego * delay + long_camera_offset)
+def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_ratio, delay):
+  states[0].x = v_ego * delay
   states[0].psi = v_ego * curvature_factor * math.radians(steer_angle) / steer_ratio * delay
   return states
 
@@ -30,18 +30,6 @@ class PathPlanner(object):
 
     self.setup_mpc(CP.steerRateCost)
     self.invalid_counter = 0
-    self.prev_angle_rate = 0
-    self.feed_forward = 0.0
-    self.last_mpc_ts = 0.0
-    self.angle_steers_des_time = 0.0
-    self.angle_steers_des_mpc = 0.0
-    self.steer_counter = 1.0
-    self.steer_counter_prev = 0.0
-    self.rough_steers_rate = 0.0
-    self.prev_angle_steers = 0.0
-    self.calculate_rate = True
-    self.accelerated_angle_rate = 0.0
-
 
   def setup_mpc(self, steer_rate_cost):
     self.libmpc = libmpc_py.libmpc
@@ -64,7 +52,6 @@ class PathPlanner(object):
   def update(self, CP, VM, CS, md, live100):
     v_ego = CS.carState.vEgo
     angle_steers = CS.carState.steeringAngle
-    angle_rate = CS.carState.steeringRate
     active = live100.live100.active
     angle_offset = live100.live100.angleOffset
     self.MP.update(v_ego, md)
@@ -76,23 +63,8 @@ class PathPlanner(object):
     r_poly = libmpc_py.ffi.new("double[4]", list(self.MP.r_poly))
     p_poly = libmpc_py.ffi.new("double[4]", list(self.MP.p_poly))
 
-    # Determine future angle steers using steer rate
-    #projected_angle_steers = float(angle_steers) + CP.steerActuatorDelay * float(angle_rate)
-
     # account for actuation delay
-    self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers, curvature_factor, CP.steerRatio, CP.steerActuatorDelay, 0.0) #CP.eonToFront)
-
-    # reset to current steer angle if not active or overriding
-    '''
-    cur_time = sec_since_boot()
-
-    self.angle_steers_des_prev = np.interp(cur_time, self.mpc_times, self.mpc_angles)
-
-    if active:
-      self.cur_state[0].delta = math.radians(self.angle_steers_des_prev - angle_offset) / CP.steerRatio
-    else:
-      self.cur_state[0].delta = math.radians(angle_steers - angle_offset) / CP.steerRatio
-    '''
+    self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers, curvature_factor, CP.steerRatio, CP.steerActuatorDelay)
 
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
@@ -116,6 +88,8 @@ class PathPlanner(object):
                         cur_time + _DT_MPC + _DT_MPC + _DT_MPC]
 
       self.angle_steers_des_mpc = self.mpc_angles[1]
+
+      # reset to current steer angle if not active or overriding
       if active:
         self.cur_state[0].delta = self.mpc_solution[0].delta[1]
       else:

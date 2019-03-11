@@ -64,10 +64,8 @@ class CarInterface(object):
     ret.enableCamera = not any(x for x in STOCK_CONTROL_MSGS[candidate] if x in fingerprint)
     ret.openpilotLongitudinalControl = ret.enableCamera
 
-    ret.steerReactance = 0.7
-    ret.steerInductance = 1.0
-    ret.steerResistance = 1.0
-    ret.eonToFront = 0.5
+    ret.steerReactance = 0.025
+    ret.steerInductance = 0.15
 
     std_cargo = 136
 
@@ -283,7 +281,7 @@ class CarInterface(object):
       buttonEvents.append(be)
 
     ret.buttonEvents = buttonEvents
-    
+
     if self.CS.lka_button and self.CS.lka_button != self.CS.prev_lka_button:
       if self.CS.lkMode:
         self.CS.lkMode = False

@@ -106,9 +106,8 @@ class CarInterface(object):
       ret.mass = 3650 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
       ret.steerKpV, ret.steerKiV = [[0.6], [0.05]]
       ret.steerKf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
-      ret.steerReactance = 1.5
-      ret.steerInductance = 1.5
-      ret.steerResistance = 0.5
+      ret.steerReactance = 0.025
+      ret.steerInductance = 0.15
 
     elif candidate == CAR.COROLLA:
       stop_and_go = False
@@ -276,7 +275,7 @@ class CarInterface(object):
       ret.steeringRate = self.CS.angle_steers_rate
     else:
       ret.steeringRate = 0
-      
+
     ret.steeringTorque = self.CS.steer_torque_driver
     ret.steeringPressed = self.CS.steer_override
 

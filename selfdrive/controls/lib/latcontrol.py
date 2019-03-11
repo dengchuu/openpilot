@@ -130,9 +130,10 @@ class LatControl(object):
         projected_angle_steers = float(angle_steers) + self.projection_factor * float(angle_rate)
         self.dampened_angle_steers = ((self.smooth_factor * self.dampened_angle_steers) + projected_angle_steers) / (1. + self.smooth_factor)
 
-        # Decide which feed forward mode should be used (angle or rate).  Use more dominant mode, but only if conditions are met
         angle_feed_forward = self.ff_angle_factor * apply_deadzone(self.angle_steers_des - float(angle_offset), 0.5)
         rate_feed_forward = self.ff_rate_factor * desired_rate
+
+        # Decide which feed forward mode should be used (angle or rate).  Use more dominant mode, but only if conditions are met
         rate_more_significant = abs(rate_feed_forward) > abs(angle_feed_forward)
         rate_angle_same_direction = (angle_feed_forward < 0) == (rate_feed_forward < 0)
         more_rate_desired = abs(desired_rate) > abs(angle_rate)
