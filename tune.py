@@ -48,8 +48,8 @@ while True:
   print ""
   print print_letters(kegman.conf[param[j]])
   print ""
-  print ("Press 1, 3, 5, 7 to increase by 0.1, 0.05, 0.01, 0.001")
-  print ("press a, d, g, j to decrease by 0.1, 0.05, 0.01, 0.001")
+  print ("Press 1, 3, 5, 7 to incr by 0.1, 0.05, 0.01, 0.001")
+  print ("press a, d, g, j to decr by 0.1, 0.05, 0.01, 0.001")
   print ("press 0 to make the value 0")
   print ("press 1 to make the value L")
   print ("press SPACE for next parameter")
