@@ -132,13 +132,13 @@ while True:
   if float(kegman.conf['react']) > 0.1:
     kegman.conf['react'] = "0.1"
 
-  if float(kegman.conf['Ki']) < 0:
+  if float(kegman.conf['Ki']) < 0 and float(kegman.conf['Ki']) != -1:
     kegman.conf['Ki'] = "0"
 
   if float(kegman.conf['Ki']) > 2:
     kegman.conf['Ki'] = "2"
 
-  if float(kegman.conf['Kp']) < 0:
+  if float(kegman.conf['Kp']) < 0 and float(kegman.conf['Kp']) != -1:
     kegman.conf['Kp'] = "0"
 
   if float(kegman.conf['Kp']) > 3:
