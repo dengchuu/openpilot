@@ -43,17 +43,21 @@ param = ["tuneGernby", "react", "damp", "Kp", "Ki"]
 j = 0
 while True:
   print ""
-  print ""
   print print_letters(param[j][0:9])
   print ""
   print print_letters(kegman.conf[param[j]])
   print ""
+  print "REACT (Plan react) is the adjustment to the"
+  print "timing of the desired target angle (increase to"
+  print "turn sooner)"
+  print ""
+  print "DAMP (Torque Dampening) is adjustment to the"
+  print "torque calculation to achieve that angle"
+  print ""
   print ("Press 1, 3, 5, 7 to incr 0.1, 0.05, 0.01, 0.001")
   print ("press a, d, g, j to decr 0.1, 0.05, 0.01, 0.001")
-  print ("press 0 to make the value 0")
-  print ("press 1 to make the value L")
-  print ("press SPACE for next parameter")
-  print ("press m for previous parameter")
+  print ("press 0 / L to make the value 0 / 1")
+  print ("press SPACE / m for next /prev parameter")
   print ("press q to quit")
 
   char  = getch()
