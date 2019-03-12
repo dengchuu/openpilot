@@ -187,7 +187,7 @@ class CarInterface(object):
 
     ret.steerKf = 0.00006 # conservative feed-forward
     ret.steerReactance = 0.025
-    ret.steerInductance = 0.015
+    ret.steerInductance = 0.01
 
     if candidate in [CAR.CIVIC, CAR.CIVIC_BOSCH]:
       stop_and_go = True
