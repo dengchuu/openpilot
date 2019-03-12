@@ -44,7 +44,7 @@ j = 0
 while True:
   print ""
   print ""
-  print print_letters(param[j])
+  print print_letters(param[j][0:9])
   print ""
   print print_letters(kegman.conf[param[j]])
   print ""
