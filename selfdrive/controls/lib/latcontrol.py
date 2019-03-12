@@ -51,7 +51,7 @@ class LatControl(object):
     self.response_time = CP.steerReactance
     self.smooth_factor = CP.steerInductance / _DT
     self.ff_angle_factor = 1.0
-    self.ff_rate_factor = 10.0
+    self.ff_rate_factor = 5.0
     self.dampened_angle_steers = 0.0                      
     # Eliminate break-points, since they aren't needed (and would cause problems for resonance)
     KpV = [np.interp(25.0, CP.steerKpBP, CP.steerKpV)]
