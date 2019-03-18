@@ -89,6 +89,7 @@ class LatControl(object):
         self.pid._k_i = ([0.], KiV)
         self.pid._k_p = ([0.], KpV)
         print(self.projection_factor, self.smooth_factor, self.response_time, self.pid._k_i, self.pid._k_p)
+      self.mpc_frame = 0
 
 
   def update(self, active, v_ego, angle_steers, angle_rate, angle_offset, steer_override, CP, VM, path_plan):
