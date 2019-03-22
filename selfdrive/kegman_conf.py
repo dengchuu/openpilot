@@ -21,10 +21,13 @@ class kegman_conf():
       if "tuneGernby" not in self.config:
         self.config.update({"tuneGernby":"0"})
         self.config.update({"react":"-1"})
-        self.config.update({"dampMPC":"-1"})
-        self.config.update({"dampSteer":"-1"})
         self.config.update({"Kp":"-1"})
         self.config.update({"Ki":"-1"})    
+        self.element_updated = True 
+        
+      if "dampMPC" not in self.config:  
+        self.config.update({"dampMPC":"-1"})
+        self.config.update({"dampSteer":"-1"})
         self.element_updated = True 
       
       # Force update battery charge limits to higher values for Big Model
