@@ -9,9 +9,13 @@ from selfdrive.controls.lib.latcontrol_helpers import calc_lookahead_offset
 from selfdrive.controls.lib.pathplanner import PathPlanner
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from common.realtime import set_realtime_priority, Ratekeeper
+try:
+  from selfdrive.kegman_conf import kegman_conf
+except:
+  pass
 
-def dashboard_thread(rate=100):
-  set_realtime_priority(3)
+def dashboard_thread(rate=200):
+  set_realtime_priority(5)
 
   USER = ''
   PASSWORD = ''
@@ -67,7 +71,7 @@ def dashboard_thread(rate=100):
 
   while 1:
     try:
-      receiveTime = int(time.time() * 1000000000)
+      receiveTime = int(time.time() * 100) * 10000000
       for socket, event in poller.poll(0):
         if socket is live100:
           _live100 = messaging.recv_one(socket)
@@ -318,15 +322,27 @@ def dashboard_thread(rate=100):
         #  print(_androidLog)
 
       if sample_str != "":
-          influxLineString += ("opData,sources=capnp " + sample_str + " %s\n" % receiveTime)
-          frame_count += 1
-          sample_str = ""
+        kegman_counter += 1
+        if kegman_counter == 300:
+          kegman_counter = 0
+          try:
+            kegman = kegman_conf()
+            reactance = kegman.conf['react']
+            inductance = kegman.conf['damp']
+            steerKpV = kegman.conf['Kp']
+            steerKiV = kegman.conf['Ki']
+            sample_str += (",reactance=%s,inductance=%s,KpV=%s,KiV=%s" % (reactance, inductance, steerKpV, steerKiV))
+          except:
+            pass
+        influxLineString += ("opData,sources=capnp " + sample_str + " %s\n" % receiveTime)
+        frame_count += 1
+        sample_str = ""
       if canDataString != "":
-          influxLineString += canDataString
-          frame_count += 1
-          canDataString = ""
+        influxLineString += canDataString
+        frame_count += 1
+        canDataString = ""
 
-      if frame_count >= 4:
+      if frame_count >= 10:
           headers = { 'Content-type': 'application/octet-stream', 'Accept': 'text/plain' }
           try:
               influx.request("write",'POST', {'db':DBNAME}, influxLineString.encode('utf-8'), 204, headers)

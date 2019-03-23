@@ -38,7 +38,7 @@ button_delay = 0.2
 kegman = kegman_conf()
 #kegman.conf['tuneGernby'] = "1"
 #kegman.write_config(kegman.conf)
-param = ["tuneGernby", "react", "damp", "Kp", "Ki"]
+param = ["tuneGernby", "react", "dampMPC", "dampSteer", "Kp", "Ki"]
 
 j = 0
 while True:
@@ -51,8 +51,11 @@ while True:
   print "timing of the desired target angle (increase to"
   print "turn sooner)"
   print ""
-  print "DAMP (Torque Dampening) is adjustment to the"
-  print "torque calculation to achieve that angle"
+  print "DAMPSTEER (Dampening of the sensor data) filters "
+  print "actual steering data to improve torque calculation"
+  print ""
+  print "DAMPMPC (Dampening of the path plan) filters "
+  print "desired angle to improve torque calculation"
   print ""
   print ("Press 1, 3, 5, 7 to incr 0.1, 0.05, 0.01, 0.001")
   print ("press a, d, g, j to decr 0.1, 0.05, 0.01, 0.001")
@@ -116,21 +119,28 @@ while True:
 
   elif (char == "q"):
     break
- 
+
 
   if float(kegman.conf['tuneGernby']) != 1 and float(kegman.conf['tuneGernby']) != 0:
     kegman.conf['tuneGernby'] = "0"
-  if float(kegman.conf['damp']) < 0 and float(kegman.conf['damp']) != -1:
-    kegman.conf['damp'] = "0"
-  
-  if float(kegman.conf['damp']) > 1.0:
-    kegman.conf['damp'] = "1.0"
+
+  if float(kegman.conf['dampSteer']) < 0 and float(kegman.conf['dampSteer']) != -1:
+    kegman.conf['dampSteer'] = "0"
+
+  if float(kegman.conf['dampMPC']) < 0 and float(kegman.conf['dampMPC']) != -1:
+    kegman.conf['dampMPC'] = "0"
+
+  if float(kegman.conf['dampMPC']) > 1.0:
+    kegman.conf['dampMPC'] = "1.0"
+
+  if float(kegman.conf['dampSteer']) > 1.0:
+    kegman.conf['dampSteer'] = "1.0"
 
   if float(kegman.conf['react']) < 0 and float(kegman.conf['react']) != -1:
     kegman.conf['react'] = "0"
 
-  if float(kegman.conf['react']) > 0.1:
-    kegman.conf['react'] = "0.1"
+  if float(kegman.conf['react']) > 1.0:
+    kegman.conf['react'] = "1.0"
 
   if float(kegman.conf['Ki']) < 0 and float(kegman.conf['Ki']) != -1:
     kegman.conf['Ki'] = "0"
@@ -144,7 +154,7 @@ while True:
   if float(kegman.conf['Kp']) > 3:
     kegman.conf['Kp'] = "3"
 
-  
+
 
 
 

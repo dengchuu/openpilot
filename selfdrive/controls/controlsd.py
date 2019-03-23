@@ -335,7 +335,8 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     "active": isActive(state),
     "vEgo": CS.vEgo,
     "vEgoRaw": CS.vEgoRaw,
-    "angleSteers": LaC.dampened_angle_steers,
+    "angleSteers": CS.steeringAngle,
+    "dampAngleSteers": LaC.dampened_angle_steers,
     "curvature": VM.calc_curvature(CS.steeringAngle * CV.DEG_TO_RAD, CS.vEgo),
     "steerOverride": CS.steeringPressed,
     "state": state,
@@ -346,7 +347,8 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     "upAccelCmd": float(LoC.pid.p),
     "uiAccelCmd": float(LoC.pid.i),
     "ufAccelCmd": float(LoC.pid.f),
-    "angleSteersDes": float(LaC.angle_steers_des),
+    "angleSteersDes": float(path_plan.pathPlan.angleSteers),
+    "dampAngleSteersDes": LaC.dampened_desired_angle,
     "upSteer": float(LaC.pid.p),
     "uiSteer": float(LaC.pid.i),
     "ufSteer": float(LaC.pid.f),
@@ -387,7 +389,7 @@ def controlsd_thread(gctx=None, rate=100):
   gc.disable()
 
   # start the loop
-  set_realtime_priority(3)
+  set_realtime_priority(4)
 
   context = zmq.Context()
   params = Params()
@@ -503,7 +505,7 @@ def controlsd_thread(gctx=None, rate=100):
                     v_cruise_kph_last, AM, rk, driver_status,
                     LaC, LoC, VM, angle_offset, passive, is_metric, cal_perc)
 
-    rk.keep_time(2. / 10000)   # use "soft" time keeping for data OUT to vehicle
+    rk.monitor_time()
     prof.checkpoint("State Control")
 
     # Publish data

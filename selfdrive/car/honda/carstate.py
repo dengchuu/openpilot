@@ -146,6 +146,9 @@ class CarState(object):
     self.trMode = int(self.kegman.conf['lastTrMode'])     # default to last distance interval on startup
     self.lkMode = True
     self.read_distance_lines_prev = 4
+    self.steer_sensor_frame_prev = 0
+    self.steer_frame_skipped = 0
+    self.steer_frame_reused = 0
     self.CP = CP
     self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = self.can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
@@ -205,8 +208,8 @@ class CarState(object):
     # 2 = temporary; 3 = TBD; 4 = temporary, hit a bump; 5 = (permanent); 6 = temporary; 7 = (permanent)
     # TODO: Use values from DBC to parse this field
     self.steer_error = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [0, 2, 3, 4, 6]
-    self.steer_not_allowed = cp.vl["STEER_STATUS"]['STEER_STATUS'] != 0
-    self.steer_warning = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [0, 3]   # 3 is low speed lockout, not worth a warning
+    self.steer_not_allowed = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [0, 4]
+    self.steer_warning = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [0, 3, 4]   # 3 is low speed lockout, not worth a warning
     if self.CP.radarOffCan:
       self.brake_error = 0
     else:
@@ -243,6 +246,14 @@ class CarState(object):
     self.gear = 0 if self.CP.carFingerprint == CAR.CIVIC else cp.vl["GEARBOX"]['GEAR']
     self.angle_steers = cp.vl["STEERING_SENSORS"]['STEER_ANGLE']
     self.angle_steers_rate = cp.vl["STEERING_SENSORS"]['STEER_ANGLE_RATE']
+    steer_sensor_frame = cp.vl["STEERING_SENSORS"]['COUNTER']
+    if (steer_sensor_frame != (self.steer_sensor_frame_prev + 1) % 4):
+      if steer_sensor_frame == self.steer_sensor_frame_prev:
+        self.steer_frame_reused += 1
+        print ("  %d reused  %d skipped    %d    %d" % (self.steer_frame_reused, self.steer_frame_skipped, steer_sensor_frame, self.steer_sensor_frame_prev))
+      else:
+        self.steer_frame_skipped += 1
+    self.steer_sensor_frame_prev = steer_sensor_frame
 
     #self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
     self.cruise_buttons = cp.vl["SCM_BUTTONS"]['CRUISE_BUTTONS']
@@ -304,19 +315,19 @@ class CarState(object):
     self.user_brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
     self.pcm_acc_status = cp.vl["POWERTRAIN_DATA"]['ACC_STATUS']
     self.hud_lead = cp.vl["ACC_HUD"]['HUD_LEAD']
-    
+
     # gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
     if self.CP.carFingerprint in (CAR.PILOT, CAR.PILOT_2019, CAR.RIDGELINE):
       if self.user_brake > 0.05:
         self.brake_pressed = 1
-        
+
     # when user presses distance button on steering wheel
     if self.cruise_setting == 3:
       if cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"] == 0:
         self.trMode = (self.trMode + 1 ) % 4
         self.kegman.conf['lastTrMode'] = str(self.trMode)   # write last distance bar setting to file
-        self.kegman.write_config(self.kegman.conf) 
-        
+        self.kegman.write_config(self.kegman.conf)
+
     # when user presses LKAS button on steering wheel
     if self.cruise_setting == 1:
       if cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"] == 0:
@@ -324,11 +335,11 @@ class CarState(object):
           self.lkMode = False
         else:
           self.lkMode = True
-          
+
     self.prev_cruise_setting = self.cruise_setting
     self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
     self.read_distance_lines = self.trMode + 1
-      
+
     if self.read_distance_lines <> self.read_distance_lines_prev:
       self.read_distance_lines_prev = self.read_distance_lines
 

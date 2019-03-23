@@ -10,7 +10,7 @@ import os, os.path
 
 # Polling rate should be twice the data rate to prevent aliasing
 def main(rate=200):
-  set_realtime_priority(3)
+  set_realtime_priority(5)
   context = zmq.Context()
   poller = zmq.Poller()
 
@@ -42,12 +42,12 @@ def main(rate=200):
     print("first row")
 
     while 1:
-      receiveTime = int(time.time() * 1000)
+      receiveTime = int(time.time() * 100) * 10
       for socket, event in poller.poll(0):
         if socket is can:
           _can = messaging.recv_one(socket)
           print(_can)
-      
+
         if socket is live100:
           _live100 = messaging.recv_one(socket)
           vEgo = _live100.live100.vEgo

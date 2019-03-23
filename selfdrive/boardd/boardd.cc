@@ -485,27 +485,86 @@ void *can_recv_thread(void *crap) {
 
   bool frame_sent, skip_once, force_send;
   uint64_t wake_time, locked_wake_time, last_long_sleep;
+  int recv_state = 0;
   force_send = true;
   last_long_sleep = 1e-3 * nanos_since_boot();
   wake_time = last_long_sleep;
+  locked_wake_time = wake_time;
 
   while (!do_exit) {
+    while (sync_id > 0 && !do_exit) {
+      frame_sent = can_recv(publisher, locked_wake_time, force_send);
 
-    frame_sent = can_recv(publisher, locked_wake_time, force_send);
-    // drain the Panda twice at 4.5ms intervals, then once at 1.0ms interval (twice max if sync_id is set)
-    if (frame_sent == true || skip_once == true) {
-      last_long_sleep = 1e-3 * nanos_since_boot();
-      skip_once = frame_sent;
-      wake_time += 4500;
-      force_send = false;
-      if (last_long_sleep < wake_time) {
-        usleep(wake_time - last_long_sleep);
+      // drain the Panda twice at 4.5ms intervals, then once at 1.0ms interval (twice max if sync_id is set)
+      if (frame_sent == true || skip_once == true) {
+        last_long_sleep = 1e-3 * nanos_since_boot();
+        skip_once = frame_sent;
+        wake_time += 4500;
+        force_send = false;
+        if (last_long_sleep < wake_time) {
+          usleep(wake_time - last_long_sleep);
+        }
+        else {
+          if ((last_long_sleep - wake_time) > 5e5) {
+            // probably a new drive
+            wake_time = last_long_sleep;
+          }
+          else {
+            if (skip_once) {
+              wake_time += 4500;
+              skip_once = false;
+              if (last_long_sleep < wake_time) {
+                usleep(wake_time - last_long_sleep);
+              }
+              else {
+                printf("   lagging sync %d \n", sync_id);
+              }
+            }
+          }
+        }
+      }
+      else {
+        force_send = (locked_wake_time > last_long_sleep + 1e5);
+        wake_time += 1000;
+        locked_wake_time = wake_time;
       }
     }
-    else {
-      force_send = ((sync_id == 0) || (locked_wake_time > last_long_sleep));
-      wake_time += 1000;
-      locked_wake_time = wake_time;
+    while (sync_id == 0 && !do_exit) {
+      frame_sent = can_recv(publisher, locked_wake_time, force_send);
+
+      // drain the Panda twice at 4.5ms intervals, then once at 1.0ms interval (twice max if sync_id is set)
+      if (recv_state++ < 2) {
+        last_long_sleep = 1e-3 * nanos_since_boot();
+        wake_time += 4500;
+        force_send = false;
+        if (last_long_sleep < wake_time) {
+          usleep(wake_time - last_long_sleep);
+        }
+        else {
+          if ((last_long_sleep - wake_time) > 5e5) {
+            // probably a new drive
+            wake_time = last_long_sleep;
+          }
+          else {
+            if (recv_state < 2) {
+              wake_time += 4500;
+              recv_state++;
+              if (last_long_sleep < wake_time) {
+                usleep(wake_time - last_long_sleep);
+              }
+              else {
+                printf("    lagging!\n");
+              }
+            }
+          }
+        }
+      }
+      else {
+        force_send = true;
+        recv_state = 0;
+        wake_time += 1000;
+        locked_wake_time = wake_time;
+      }
     }
   }
   return NULL;
@@ -690,7 +749,7 @@ int main() {
   LOGW("starting boardd");
 
   // set process priority
-  err = set_realtime_priority(4);
+  err = set_realtime_priority(1);
   LOG("setpriority returns %d", err);
 
   // check the environment
