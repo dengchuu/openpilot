@@ -31,10 +31,9 @@ class PathPlanner(object):
 
     self.setup_mpc(CP.steerRateCost)
     self.invalid_counter = 0
-    self.steer_error_index = 0
-    self.mpc_angles = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    self.mpc_times = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-
+    self.last_kegman_update = 0
+    self.mpc_angles = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    self.mpc_times = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
   def setup_mpc(self, steer_rate_cost):
     self.libmpc = libmpc_py.libmpc
@@ -52,17 +51,10 @@ class PathPlanner(object):
     self.angle_steers_des_time = 0.0
 
   def update(self, CP, VM, CS, md, live100):
-
-    kegman = kegman_conf()
-    offset = float(kegman.conf['react'])
-    projection = float(kegman.conf['dampMPC'])
-    smoothing = max(0.01, projection / 0.01)
-
     v_ego = CS.carState.vEgo
     angle_steers = live100.live100.dampAngleSteers
     active = live100.live100.active
     angle_offset = live100.live100.angleOffset
-
     self.MP.update(v_ego, md)
 
     # Run MPC
@@ -71,10 +63,9 @@ class PathPlanner(object):
     l_poly = libmpc_py.ffi.new("double[4]", list(self.MP.l_poly))
     r_poly = libmpc_py.ffi.new("double[4]", list(self.MP.r_poly))
     p_poly = libmpc_py.ffi.new("double[4]", list(self.MP.p_poly))
-    projected_desired_angle = np.interp(sec_since_boot() + offset + projection, self.mpc_times, self.mpc_angles)
-    dampAngleSteersDes =(((smoothing - 1.) * live100.live100.dampAngleSteersDes) + projected_desired_angle) / smoothing
+
     # account for actuation delay
-    self.cur_state[0].delta = math.radians(dampAngleSteersDes - angle_offset) / CP.steerRatio
+    self.cur_state[0].delta = math.radians(live100.live100.dampAngleSteersDes - angle_offset) / CP.steerRatio
     self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers, curvature_factor, CP.steerRatio, CP.steerActuatorDelay)
 
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
@@ -82,25 +73,17 @@ class PathPlanner(object):
                         l_poly, r_poly, p_poly,
                         self.MP.l_prob, self.MP.r_prob, self.MP.p_prob, curvature_factor, v_ego_mpc, self.MP.lane_width)
 
-    cur_time = sec_since_boot()
-
     #  Check for infeasable MPC solution
     mpc_nans = np.any(np.isnan(list(self.mpc_solution[0].delta)))
     if not mpc_nans:
 
-      projected_desired_angle = np.interp(cur_time + offset + projection, self.mpc_times, self.mpc_angles)
-      dampAngleSteersDes =(((smoothing - 1.) * live100.live100.dampAngleSteersDes) + projected_desired_angle) / smoothing
-
-      self.mpc_angles[0] = dampAngleSteersDes
+      self.mpc_angles[0] = live100.live100.dampAngleSteersDes
       self.mpc_times[0] = live100.logMonoTime * 1e-9
-      for i in range(1,10):
-        #temp_angle = float(math.degrees(self.mpc_solution[0].delta[i] * CP.steerRatio) + angle_offset)
-        #self.mpc_angles[i] = ((i - 1) * self.mpc_angles[i] + temp_angle) / i
+      for i in range(1,20):
         self.mpc_angles[i] = float(math.degrees(self.mpc_solution[0].delta[i] * CP.steerRatio) + angle_offset)
         self.mpc_times[i] = self.mpc_times[i-1] + _DT_MPC
 
       self.angle_steers_des_mpc = self.mpc_angles[1]
-      #print(cur_time, self.mpc_times[1] - self.mpc_times[0], self.mpc_times[2] - self.mpc_times[1])
 
       # reset to current steer angle if not active or overriding
       if active:
@@ -111,6 +94,7 @@ class PathPlanner(object):
       self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, CP.steerRateCost)
       self.cur_state[0].delta = math.radians(angle_steers) / CP.steerRatio
 
+      cur_time = sec_since_boot()
       if cur_time > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = cur_time
         cloudlog.warning("Lateral mpc - nan: True")

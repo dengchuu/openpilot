@@ -16,9 +16,16 @@ def get_steer_max(CP, v_ego):
 class LatControl(object):
   def __init__(self, CP):
 
+    #self.mpc_angles = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
     kegman = kegman_conf()
     self.write_conf = False
 
+    kegman.conf['tuneGernby'] = str(1)
+    self.write_conf = True
+    if kegman.conf['tuneGernby'] == "-1":
+      kegman.conf['tuneGernby'] = str(1)
+      self.write_conf = True
     if kegman.conf['react'] == "-1":
       kegman.conf['react'] = str(round(CP.steerMPCOffsetTime,3))
       self.write_conf = True
@@ -39,11 +46,11 @@ class LatControl(object):
       kegman.write_config(kegman.conf)
 
     self.mpc_frame = 0
-    self.desired_offset = CP.steerMPCOffsetTime
+    #self.desired_offset = CP.steerMPCOffsetTime
     self.actual_projection = CP.steerDampenTime
     self.desired_projection = CP.steerMPCDampenTime
-    self.actual_smoothing = self.actual_projection / _DT
-    self.desired_smoothing = self.desired_projection / _DT
+    self.actual_smoothing = max(1.0, self.actual_projection / _DT)
+    self.desired_smoothing = max(1.0, (self.desired_projection - CP.steerMPCOffsetTime) / _DT)
     self.dampened_angle_steers = 0.0
     self.dampened_desired_angle = 0.0
     # Eliminate break-points, since they aren't needed (and would cause problems for resonance)
@@ -71,18 +78,17 @@ class LatControl(object):
         self.gernby = True
         self.steerKpV = np.array([float(kegman.conf['Kp'])])
         self.steerKiV = np.array([float(kegman.conf['Ki'])])
-        self.desired_offset = float(kegman.conf['react'])
         self.actual_projection = float(kegman.conf['dampSteer'])
         self.desired_projection = float(kegman.conf['dampMPC'])
-        self.actual_smoothing = max(0.01, self.actual_projection / _DT)
-        self.desired_smoothing = max(0.01, self.desired_projection / _DT)
+        self.actual_smoothing = max(1., self.actual_projection / _DT)
+        self.desired_smoothing = max(1., (self.desired_projection - float(kegman.conf['react'])) / _DT)
 
         # Eliminate break-points, since they aren't needed (and would cause problems for resonance)
         KpV = [np.interp(25.0, CP.steerKpBP, self.steerKpV)]
         KiV = [np.interp(25.0, CP.steerKiBP, self.steerKiV)]
         self.pid._k_i = ([0.], KiV)
         self.pid._k_p = ([0.], KpV)
-        print(self.desired_offset, self.desired_projection, self.actual_projection)
+        print(self.desired_smoothing, self.desired_projection, self.actual_projection)
       else:
         self.gernby = False
       self.mpc_frame = 0
@@ -106,6 +112,9 @@ class LatControl(object):
       # If non-zero angle_rate is provided, stop calculating rate
       self.calculate_rate = False
 
+    #for i in range(1,20):
+    #  self.mpc_angles[i] = ((self.mpc_angle[i] * (i-1)) + path_plan.mpcAngles[i] / i
+
     if v_ego < 0.3 or not active:
       output_steer = 0.0
       self.pid.reset()
@@ -113,9 +122,9 @@ class LatControl(object):
       self.dampened_desired_angle = angle_steers
     else:
       if self.gernby:
-        projected_desired_angle = np.interp(sec_since_boot() + self.desired_offset + self.desired_projection, path_plan.mpcTimes, path_plan.mpcAngles)
-        if not steer_override:
-          self.dampened_desired_angle = (((self.desired_smoothing - 1.) * self.dampened_desired_angle) + projected_desired_angle) / self.desired_smoothing
+        projected_desired_angle = np.interp(sec_since_boot() + self.desired_projection, path_plan.mpcTimes, path_plan.mpcAngles)
+        self.dampened_desired_angle = (((self.desired_smoothing - 1.) * self.dampened_desired_angle) + projected_desired_angle) / self.desired_smoothing
+        #print(self.dampened_desired_angle, self.dampened_angle_steers, path_plan.mpcTimes, path_plan.mpcAngles)
       else:
         self.dampened_desired_angle = path_plan.angleSteers
 
@@ -124,9 +133,6 @@ class LatControl(object):
           projected_angle_steers = float(angle_steers) + self.actual_projection * float(angle_rate)
           if not steer_override:
             self.dampened_angle_steers = (((self.actual_smoothing - 1.) * self.dampened_angle_steers) + projected_angle_steers) / self.actual_smoothing
-          #else:
-            #self.dampened_angle_steers = angle_steers
-            #self.dampened_desired_angle = projected_desired_angle
         else:
           self.dampened_angle_steers = angle_steers
 

@@ -77,8 +77,8 @@ class CarInterface(object):
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
 
     ret.steerMPCOffsetTime = 0.025
-    ret.steerMPCDampenTime = 0.10
-    ret.steerDampenTime = 0.02
+    ret.steerMPCDampenTime = 0.1
+    ret.steerDampenTime = 0.1
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
