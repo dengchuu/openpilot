@@ -69,8 +69,8 @@ class LatControl(object):
         self.total_desired_projection = max(0.0, float(kegman.conf['dampMPC']) + float(kegman.conf['reactMPC']))
         self.desired_smoothing = max(1.0, float(kegman.conf['dampMPC']) / _DT)
         self.gernbySteer = (self.total_desired_projection > 0 or self.desired_smoothing > 1)
-        self.ff_angle_factor = float(kegman.conf['angleFF'])
-        self.ff_rate_factor = float(kegman.conf['rateFF'])
+        self.angle_ff_gain = float(kegman.conf['angleFF'])
+        self.rate_ff_gain = float(kegman.conf['rateFF'])
 
         # Eliminate break-points, since they aren't needed (and would cause problems for resonance)
         KpV = [interp(25.0, CP.steerKpBP, self.steerKpV)]
@@ -102,7 +102,7 @@ class LatControl(object):
         cur_time = sec_since_boot()
         projected_desired_angle = interp(cur_time + self.total_desired_projection, path_plan.mpcTimes, path_plan.mpcAngles)
         self.dampened_desired_angle += ((projected_desired_angle - self.dampened_desired_angle) / self.desired_smoothing)
-        projected_desired_rate = interp(cur_time + self.total_desired_projection, path_plan.mpcRates, path_plan.mpcRates)
+        projected_desired_rate = interp(cur_time + self.total_desired_projection, path_plan.mpcTimes, path_plan.mpcRates)
         self.dampened_desired_rate += ((projected_desired_rate - self.dampened_desired_rate) / self.desired_smoothing)
 
       if CP.steerControlType == car.CarParams.SteerControlType.torque:
