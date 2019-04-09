@@ -93,6 +93,22 @@ class CarController(object):
       self.speed_units = 3
 
 
+    self.prev_lead_distance = 0.0
+    self.stopped_lead_distance = 0.0
+    self.lead_distance_counter = 1
+    self.lead_distance_counter_prev = 1
+    self.rough_lead_speed = 0.0
+
+  def rough_speed(self, lead_distance):
+    if self.prev_lead_distance != lead_distance:
+      self.lead_distance_counter_prev = self.lead_distance_counter
+      self.rough_lead_speed += 0.3334 * ((lead_distance - self.prev_lead_distance) / self.lead_distance_counter_prev - self.rough_lead_speed)
+      self.lead_distance_counter = 0.0
+    elif self.lead_distance_counter >= self.lead_distance_counter_prev:
+      self.rough_lead_speed = (self.lead_distance_counter * self.rough_lead_speed) / (self.lead_distance_counter + 1.0)
+    self.lead_distance_counter += 1.0
+    self.prev_lead_distance = lead_distance
+    return self.rough_lead_speed
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -151,6 +167,8 @@ class CarController(object):
       STEER_MAX = 0xF00
     elif CS.CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX):
       STEER_MAX = 0x3e8  # CR-V only uses 12-bits and requires a lower value (max value from energee)
+    elif CS.CP.carFingerprint in (CAR.ODYSSEY_CHN):
+      STEER_MAX = 0x7FFF
     else:
       STEER_MAX = 0x1000
 
@@ -179,8 +197,15 @@ class CarController(object):
       if pcm_cancel_cmd:
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx))
       elif CS.stopped:
-        can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
-
+        rough_lead_speed = self.rough_speed(CS.lead_distance)
+        if CS.lead_distance > (self.stopped_lead_distance + 15.0) or rough_lead_speed > 0.1:
+          self.stopped_lead_distance = 0.0
+          can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
+          print("spamming")
+        print(self.stopped_lead_distance, CS.lead_distance, rough_lead_speed)
+      else:
+        self.stopped_lead_distance = CS.lead_distance
+        self.prev_lead_distance = CS.lead_distance
     else:
       # Send gas and brake commands.
       if (frame % 2) == 0:
