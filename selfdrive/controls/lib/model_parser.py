@@ -37,8 +37,8 @@ class ModelParser(object):
       r_poly = model_polyfit(md.model.rightLane.points, self._path_pinv)  # right line
 
       # only offset left and right lane lines; offsetting p_poly does not make sense
-      kegman = kegman_conf()
-      CAMERA_OFFSET = float(kegman.conf['cameraOffset'])  # m from center car to camera
+      #kegman = kegman_conf()
+      #CAMERA_OFFSET = float(kegman.conf['cameraOffset'])  # m from center car to camera
       l_poly[3] += CAMERA_OFFSET
       r_poly[3] += CAMERA_OFFSET
 
