@@ -38,7 +38,7 @@ button_delay = 0.2
 kegman = kegman_conf()
 #kegman.conf['tuneGernby'] = "1"
 #kegman.write_config(kegman.conf)
-param = ["tuneGernby", "reactMPC", "dampMPC", "cameraOffset", "Kp", "Ki"]
+param = ["tuneGernby", "reactMPC", "dampMPC",-"Kp", "Ki"]
 
 j = 0
 while True:
@@ -47,11 +47,11 @@ while True:
   print ""
   print print_letters(kegman.conf[param[j]])
   print ""
-  print ("Press 1, 3, 5, 7 to incr 0.1, 0.05, 0.01, 0.001")
-  print ("press a, d, g, j to decr 0.1, 0.05, 0.01, 0.001")
-  print ("press 0 / L to make the value 0 / 1")
-  print ("press SPACE / m for next /prev parameter")
-  print ("press z to quit")
+  print ("1, 3, 5, 7 to incr 0.1, 0.05, 0.01, 0.001")
+  print ("a, d, g, j to decr 0.1, 0.05, 0.01, 0.001")
+  print ("0 / L to make the value 0 / 1")
+  print ("SPACE / m for next /prev parameter")
+  print ("z to quit")
 
   char  = getch()
   write_json = False
