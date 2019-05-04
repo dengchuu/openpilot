@@ -22,6 +22,7 @@ def dashboard_thread(rate=100):
   vEgo = 0.0
   live100 = messaging.sub_sock(context, service_list['live100'].port, addr=ipaddress, conflate=False, poller=poller)
   liveMap = messaging.sub_sock(context, service_list['liveMapData'].port, addr=ipaddress, conflate=False, poller=poller)
+  gernStreamData = messaging.sub_sock(context, 8600, addr=ipaddress, conflate=False, poller=poller)
   #gpsNMEA = messaging.sub_sock(context, service_list['gpsNMEA'].port, addr=ipaddress, conflate=True)
 
   #_live100 = None
@@ -30,6 +31,7 @@ def dashboard_thread(rate=100):
 
   #server_address = "tcp://kevo.live"
   server_address = "tcp://gernstation.synology.me"
+  #server_address = "tcp://192.168.1.2"
 
   context = zmq.Context()
   steerPush = context.socket(zmq.PUSH)
@@ -57,14 +59,17 @@ def dashboard_thread(rate=100):
     tunePush.send_json(config)
     tunePush = None
 
-  tuneSub.setsockopt_string(zmq.SUBSCRIBE, user_id)
+  tuneSub.setsockopt(zmq.SUBSCRIBE, str(user_id))
   influxFormatString = user_id + ",sources=capnp apply_steer=;noise_feedback=;ff_standard=;ff_rate=;ff_angle=;angle_steers_des=;angle_steers=;dampened_angle_steers_des=;steer_override=;v_ego=;p=;i=;f=;cumLagMs=; "
   kegmanFormatString = user_id + ",sources=kegman dampMPC=;reactMPC=;dampSteer=;reactSteer=;KpV=;KiV=;rateFF=;angleFF=;delaySteer=;oscFactor=;oscPeriod=; "
   mapFormatString = "location,user=" + user_id + " latitude=;longitude=;altitude=;speed=;bearing=;accuracy=;speedLimitValid=;speedLimit=;curvatureValid=;curvature=;wayId=;distToTurn=;mapValid=;speedAdvisoryValid=;speedAdvisory=;speedAdvisoryValid=;speedAdvisory=;speedLimitAheadValid=;speedLimitAhead=;speedLimitAheadDistance=; "
   gpsFormatString="gps,user=" + user_id + " "
+  gernStreamFormatString = "curvature,user=" + user_id + " l_curv=;p_curv=;r_curv=;map_curv=;map_rcurv=;map_rcurvx=;v_curv=;l_diverge=;r_diverge=; "
   influxDataString = ""
   kegmanDataString = ""
+  gernStreamDataString = ""
   mapDataString = ""
+  insertString = ""
 
   lastGPStime = 0
   lastMaptime = 0
@@ -76,10 +81,14 @@ def dashboard_thread(rate=100):
     for socket, event in poller.poll(0):
       if socket is tuneSub:
         config = json.loads(tuneSub.recv_multipart()[1])
-        print(config)
+        #print(config)
         with open('/data/kegman.json', 'w') as f:
           json.dump(config, f, indent=2, sort_keys=True)
           os.chmod("/data/kegman.json", 0o764)
+
+      if socket is gernStreamData:
+        gernStream = gernStreamData.recv_string() + str(receiveTime) + "|"
+        if vEgo > 0: gernStreamDataString += gernStream
 
       if socket is liveMap:
         _liveMap = messaging.drain_sock(socket)
@@ -91,7 +100,7 @@ def dashboard_thread(rate=100):
               receiveTime = int((monoTimeOffset + lmap.logMonoTime) * 0.0000002) * 5
             lm = lmap.liveMapData
             lg = lm.lastGps
-            print(lm)
+            #print(lm)
             mapDataString += ("%f,%f,%f,%f,%f,%f,%d,%f,%d,%f,%f,%f,%d,%d,%f,%d,%f,%d,%f,%f,%d|" %
                   (lg.latitude ,lg.longitude ,lg.altitude ,lg.speed ,lg.bearing ,lg.accuracy ,lm.speedLimitValid ,lm.speedLimit ,lm.curvatureValid
                   ,lm.curvature ,lm.wayId ,lm.distToTurn ,lm.mapValid ,lm.speedAdvisoryValid ,lm.speedAdvisory ,lm.speedAdvisoryValid ,lm.speedAdvisory
@@ -176,6 +185,10 @@ def dashboard_thread(rate=100):
         except:
           kegman_valid = False
 
+      if gernStreamDataString != "":
+        insertString = insertString + gernStreamFormatString + "~" + gernStreamDataString + "!"
+        #print(insertString)
+        gernStreamDataString =""
       insertString = insertString + influxFormatString + "~" + influxDataString + "!"
       insertString = insertString + mapFormatString + "~" + mapDataString
       steerPush.send_string(insertString)
