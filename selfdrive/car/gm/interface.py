@@ -34,12 +34,12 @@ class CarInterface(object):
     self.steer_counter_prev = 0
     self.rough_steers_rate = 0.0
     self.angle_offset_bias = 0.0
-    self.angles_error = np.zeros((500))
+    self.angles_error = None #np.zeros((500))
     self.avg_error1 = 0.0
     self.avg_error2 = 0.0
     self.steer_error = 0.0
-    self.oscillation_frames = int(CP.oscillationPeriod * 50)
-    self.oscillation_factor = CP.oscillationFactor
+    self.oscillation_frames = 0.0 #int(CP.oscillationPeriod * 50)
+    self.oscillation_factor = 0.0  #CP.oscillationFactor
 
     # *** init the major players ***
     canbus = CanBus()
@@ -73,12 +73,12 @@ class CarInterface(object):
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
     ret.steerKpV, ret.steerKiV = [[0.2], [0.025]]
     ret.steerKf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
-    ret.steerMPCReactTime = -0.1
+    ret.steerMPCReactTime = 0.025
     ret.steerMPCDampTime = 0.175
     ret.steerReactTime = 0.001
     ret.steerDampTime = 0.001
     ret.rateFFGain = 0.2
-    ret.eonToFront = 0.2
+    ret.eonToFront = 0.1
     # Presence of a camera on the object bus is ok.
     # Have to go passive if ASCM is online (ACC-enabled cars),
     # or camera is on powertrain bus (LKA cars without ACC).
