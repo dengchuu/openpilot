@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from common.realtime import sec_since_boot
 from cereal import car
+from numpy import np
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -29,6 +30,13 @@ class CarInterface(object):
     self.CS = CarState(CP)
     self.cp = get_can_parser(CP)
     self.cp_cam = get_camera_parser(CP)
+    self.angle_offset_bias = 0.0
+    self.angles_error = np.zeros((500))
+    self.avg_error1 = 0.0
+    self.avg_error2 = 0.0
+    self.steer_error = 0.0
+    self.oscillation_frames = int(CP.oscillationPeriod * 50)
+    self.oscillation_factor = CP.oscillationFactor
 
     # sending if read only is False
     if sendcan is not None:

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import zmq
+from numpy import np
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.services import service_list
@@ -29,6 +30,13 @@ class CarInterface(object):
     self.prev_speed = 0.
     self.yaw_rate = 0.
     self.yaw_rate_meas = 0.
+    self.angle_offset_bias = 0.0
+    self.angles_error = np.zeros((500))
+    self.avg_error1 = 0.0
+    self.avg_error2 = 0.0
+    self.steer_error = 0.0
+    self.oscillation_frames = int(CP.oscillationPeriod * 50)
+    self.oscillation_factor = CP.oscillationFactor
 
   @staticmethod
   def compute_gb(accel, speed):
