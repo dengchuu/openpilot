@@ -34,11 +34,11 @@ class CarInterface(object):
     self.steer_counter_prev = 0
     self.rough_steers_rate = 0.0
     self.angle_offset_bias = 0.0
-    self.angles_error = None #np.zeros((500))
+    self.angles_error = [0.,] #np.zeros((500))
     self.avg_error1 = 0.0
     self.avg_error2 = 0.0
     self.steer_error = 0.0
-    self.oscillation_frames = 0.0 #int(CP.oscillationPeriod * 50)
+    self.oscillation_frames = 0 #int(CP.oscillationPeriod * 50)
     self.oscillation_factor = 0.0  #CP.oscillationFactor
 
     # *** init the major players ***
@@ -187,7 +187,7 @@ class CarInterface(object):
     ret.steerMaxBP = [0.] # m/s
     ret.steerMaxV = [1.]
     ret.gasMaxBP = [0.]
-    ret.gasMaxV = [.5]
+    ret.gasMaxV = [0.5]
     ret.brakeMaxBP = [0.]
     ret.brakeMaxV = [1.]
     ret.longPidDeadzoneBP = [0.]
