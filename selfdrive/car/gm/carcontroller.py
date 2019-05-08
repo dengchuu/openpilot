@@ -105,7 +105,7 @@ class CarController(object):
         orig_apply_steer = 0
 
       self.apply_steer_last = apply_steer
-      idx = (frame / P.STEER_STEP) % 4
+      idx = (frame // P.STEER_STEP) % 4
       CS.apply_steer = apply_steer
       CS.torque_clipped = (orig_apply_steer != apply_steer)
 
@@ -137,7 +137,7 @@ class CarController(object):
 
       # Gas/regen and brakes - all at 25Hz
       if (frame % 4) == 0:
-        idx = (frame / 4) % 4
+        idx = (frame // 4) % 4
 
         at_full_stop = enabled and CS.standstill
         near_stop = enabled and (CS.v_ego < P.NEAR_STOP_BRAKE_PHASE)
@@ -156,13 +156,13 @@ class CarController(object):
       tt = sec_since_boot()
 
       if frame % time_and_headlights_step == 0:
-        idx = (frame / time_and_headlights_step) % 4
+        idx = (frame // time_and_headlights_step) % 4
         can_sends.append(gmcan.create_adas_time_status(canbus.obstacle, int((tt - self.start_time) * 60), idx))
         can_sends.append(gmcan.create_adas_headlights_status(canbus.obstacle))
 
       speed_and_accelerometer_step = 2
       if frame % speed_and_accelerometer_step == 0:
-        idx = (frame / speed_and_accelerometer_step) % 4
+        idx = (frame // speed_and_accelerometer_step) % 4
         can_sends.append(gmcan.create_adas_steering_status(canbus.obstacle, idx))
         can_sends.append(gmcan.create_adas_accelerometer_speed_status(canbus.obstacle, CS.v_ego, idx))
 
