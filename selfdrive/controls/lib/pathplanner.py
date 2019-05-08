@@ -12,8 +12,8 @@ import selfdrive.messaging as messaging
 
 _DT_MPC = 0.05
 
-def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_ratio, delay):
-  states[0].x = v_ego * delay
+def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_ratio, delay, eonToFront):
+  states[0].x = v_ego * delay + eonToFront
   states[0].psi = v_ego * curvature_factor * math.radians(steer_angle) / steer_ratio * delay
   return states
 
@@ -55,9 +55,8 @@ class PathPlanner(object):
     angle_steers = live100.live100.angleSteers
     angle_rate = live100.live100.angleRate
     v_curv = live100.live100.curvature
-    active = live100.live100.active
+    #active = live100.live100.active
     delaySteer = live100.live100.delaySteer
-    print(delaySteer)
 
     angle_offset_average = live_parameters.liveParameters.angleOffsetAverage
     angle_offset_bias = live100.live100.angleModelBias + angle_offset_average
@@ -77,7 +76,7 @@ class PathPlanner(object):
     # account for actuation delay
     projected_angle_steers = angle_steers + (delaySteer * angle_rate) - angle_offset_average
     self.cur_state[0].delta = math.radians(live100.live100.dampAngleSteersDes - angle_offset_bias) / VM.sR
-    self.cur_state = calc_states_after_delay(self.cur_state, v_ego, projected_angle_steers, curvature_factor, VM.sR, delaySteer)
+    self.cur_state = calc_states_after_delay(self.cur_state, v_ego, projected_angle_steers, curvature_factor, VM.sR, delaySteer, CP.eonToFront)
 
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,

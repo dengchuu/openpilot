@@ -160,6 +160,8 @@ class CarInterface(object):
     # steering wheel
     ret.steeringAngle = self.CS.angle_steers
     ret.steeringPressed = self.CS.steer_override
+    ret.steeringTorqueClipped = False  # self.CS.torque_clipped
+    ret.steeringRequested = 0   #self.CS.apply_steer
 
     # gas pedal
     ret.gas = self.CS.user_gas / 100.

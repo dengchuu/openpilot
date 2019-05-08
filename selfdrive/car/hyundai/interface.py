@@ -197,6 +197,8 @@ class CarInterface(object):
     ret.wheelSpeeds.fr = self.CS.v_wheel_fr
     ret.wheelSpeeds.rl = self.CS.v_wheel_rl
     ret.wheelSpeeds.rr = self.CS.v_wheel_rr
+    ret.steeringTorqueClipped = self.CS.torque_clipped
+    ret.steeringRequested = self.CS.apply_steer
 
     # gear shifter
     if self.CP.carFingerprint in FEATURES["use_cluster_gears"]:

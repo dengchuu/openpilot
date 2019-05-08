@@ -49,7 +49,6 @@ def data_sample(CI, CC, CS, plan_sock, path_plan_sock, thermal, calibration, hea
   if rk.remaining > 10. / 1000 or rk.frame < 1000:
     CS = CI.update(CC)
   else:
-    CS = CS
     print("CAN lagging!", rk.remaining, rk.frame)
 
   events = list(CS.events)

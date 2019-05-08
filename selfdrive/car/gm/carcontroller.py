@@ -98,13 +98,16 @@ class CarController(object):
     if (frame % P.STEER_STEP) == 0:
       lkas_enabled = enabled and not CS.steer_not_allowed and CS.v_ego > P.MIN_STEER_SPEED
       if lkas_enabled:
-        apply_steer = actuators.steer * P.STEER_MAX
-        apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.steer_torque_driver, P)
+        orig_apply_steer = actuators.steer * P.STEER_MAX
+        apply_steer = apply_std_steer_torque_limits(orig_apply_steer, self.apply_steer_last, CS.steer_torque_driver, P)
       else:
         apply_steer = 0
+        orig_apply_steer = 0
 
       self.apply_steer_last = apply_steer
       idx = (frame / P.STEER_STEP) % 4
+      CS.apply_steer = apply_steer
+      CS.torque_clipped = (orig_apply_steer != apply_steer)
 
       if self.car_fingerprint in SUPERCRUISE_CARS:
         can_sends += gmcan.create_steering_control_ct6(self.packer_pt,

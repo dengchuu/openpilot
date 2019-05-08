@@ -47,8 +47,8 @@ class CarController(object):
 
     # *** compute control surfaces ***
     # steer torque
-    apply_steer = actuators.steer * SteerLimitParams.STEER_MAX
-    apply_steer = apply_toyota_steer_torque_limits(apply_steer, self.apply_steer_last,
+    orig_apply_steer = actuators.steer * SteerLimitParams.STEER_MAX
+    apply_steer = apply_toyota_steer_torque_limits(orig_apply_steer, self.apply_steer_last,
                                                    CS.steer_torque_motor, SteerLimitParams)
 
     moving_fast = CS.v_ego > CS.CP.minSteerSpeed  # for status message
@@ -95,6 +95,8 @@ class CarController(object):
     new_msg = create_lkas_command(self.packer, int(apply_steer), self.gone_fast_yet, frame)
     can_sends.append(new_msg)
 
+    CS.apply_steer = apply_steer
+    CS.torque_clipped = (orig_apply_steer != apply_steer)
     self.ccframe += 1
     self.prev_frame = frame
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())

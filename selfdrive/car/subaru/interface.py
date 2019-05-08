@@ -162,6 +162,8 @@ class CarInterface(object):
     ret.rightBlinker = self.CS.right_blinker_on
     ret.seatbeltUnlatched = self.CS.seatbelt_unlatched
     ret.doorOpen = self.CS.door_open
+    ret.steeringTorqueClipped = self.CS.torque_clipped
+    ret.steeringRequested = self.CS.apply_steer
 
     buttonEvents = []
 

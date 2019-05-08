@@ -177,6 +177,8 @@ class CarInterface(object):
     # steering wheel
     ret.steeringAngle = self.CS.angle_steers
     ret.steeringRate = self.CS.angle_steers_rate
+    ret.steeringTorqueClipped = self.CS.torque_clipped
+    ret.steeringRequested = self.CS.apply_steer
 
     ret.steeringTorque = self.CS.steer_torque_driver
     ret.steeringPressed = self.CS.steer_override

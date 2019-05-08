@@ -105,6 +105,8 @@ class CarInterface(object):
 
     ret.aEgo = a
     ret.brakePressed = a < -0.5
+    ret.steeringTorqueClipped = False
+    ret.steeringRequested = 0
 
     self.yawRate = LPG * self.yaw_rate_meas + (1. - LPG) * self.yaw_rate
     ret.yawRate = self.yaw_rate

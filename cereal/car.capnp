@@ -358,6 +358,7 @@ struct CarParams {
   steerReactTime @55 :Float32;
   oscillationPeriod @56 :Int16;
   oscillationFactor @57 :Float32;
+  eonToFront @58 :Float32;
 
   vEgoStopping @30 :Float32; # Speed at which the car goes into stopping state
   directAccelControl @31 :Bool; # Does the car have direct accel control or just gas/brake

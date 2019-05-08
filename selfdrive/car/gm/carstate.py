@@ -68,6 +68,8 @@ class CarState(object):
                          C=np.matrix([1., 0.]),
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.
+    self.torque_clipped = False
+    self.apply_steer = 0
 
   def update(self, pt_cp):
 
