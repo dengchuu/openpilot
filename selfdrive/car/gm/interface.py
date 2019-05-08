@@ -29,6 +29,10 @@ class CarInterface(object):
     self.brake_pressed_prev = False
     self.can_invalid_count = 0
     self.acc_active_prev = 0
+    self.prev_angle_steers = 0.0
+    self.steer_counter = 1
+    self.steer_counter_prev = 0
+    self.rough_steers_rate = 0.0
     self.angle_offset_bias = 0.0
     self.angles_error = np.zeros((500))
     self.avg_error1 = 0.0
@@ -237,6 +241,17 @@ class CarInterface(object):
 
     # steering wheel
     ret.steeringAngle = self.CS.angle_steers
+
+    if self.CS.angle_steers != self.prev_angle_steers:
+      self.steer_counter_prev = self.steer_counter
+      self.rough_steers_rate = (self.rough_steers_rate + 100.0 * (self.CS.angle_steers - self.prev_angle_steers) / self.steer_counter_prev) / 2.0
+      self.steer_counter = 0.0
+    elif self.steer_counter >= self.steer_counter_prev:
+      self.rough_steers_rate = (self.steer_counter * self.rough_steers_rate) / (self.steer_counter + 1.0)
+    self.steer_counter += 1.0
+    angle_rate = self.rough_steers_rate
+    self.prev_angle_steers = self.CS.angle_steers
+    ret.steeringRate = angle_rate
 
     # torque and user override. Driver awareness
     # timer resets when the user uses the steering wheel.
