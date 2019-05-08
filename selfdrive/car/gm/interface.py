@@ -64,10 +64,17 @@ class CarInterface(object):
     ret.carName = "gm"
     ret.carFingerprint = candidate
 
+    # same tuning for Volt and CT6 for now
     ret.enableCruise = False
-    ret.steerMPCReactTime = 0.025     # increase total MPC projected time by 25 ms
-    ret.steerMPCDampTime = 0.15       # dampen desired angle over 250ms (5 mpc cycles)
-
+    ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
+    ret.steerKpV, ret.steerKiV = [[0.2], [0.025]]
+    ret.steerKf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
+    ret.steerMPCReactTime = -0.1
+    ret.steerMPCDampTime = 0.175
+    ret.steerReactTime = 0.001
+    ret.steerDampTime = 0.001
+    ret.rateFFGain = 0.2
+    ret.eonToFront = 0.2
     # Presence of a camera on the object bus is ok.
     # Have to go passive if ASCM is online (ACC-enabled cars),
     # or camera is on powertrain bus (LKA cars without ACC).
@@ -173,11 +180,6 @@ class CarInterface(object):
                             (ret.centerToFront / ret.wheelbase) / (centerToFront_civic / wheelbase_civic)
 
 
-    # same tuning for Volt and CT6 for now
-    ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
-    ret.steerKpV, ret.steerKiV = [[0.2], [0.04]]
-    ret.steerKf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
-
     ret.steerMaxBP = [0.] # m/s
     ret.steerMaxV = [1.]
     ret.gasMaxBP = [0.]
@@ -200,7 +202,6 @@ class CarInterface(object):
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
     ret.steerRateCost = 1.0
     ret.steerControlType = car.CarParams.SteerControlType.torque
-    ret.rateFFGain = 0.01
 
     return ret
 
