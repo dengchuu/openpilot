@@ -40,6 +40,7 @@ class CarInterface(object):
     self.steer_error = 0.0
     self.oscillation_frames = 0 #int(CP.oscillationPeriod * 50)
     self.oscillation_factor = 0.0  #CP.oscillationFactor
+    self.noise_feedback = 0.0
 
     # *** init the major players ***
     canbus = CanBus()
