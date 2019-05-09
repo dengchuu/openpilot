@@ -9,10 +9,10 @@ import selfdrive.messaging as messaging
 def load_interfaces(x):
   ret = {}
   for interface in x:
-    try:
-      imp = __import__('selfdrive.car.%s.interface' % interface, fromlist=['CarInterface']).CarInterface
-    except ImportError:
-      imp = None
+    #try:
+    imp = __import__('selfdrive.car.%s.interface' % interface, fromlist=['CarInterface']).CarInterface
+    #except ImportError:
+    #  imp = None
     for car in x[interface]:
       ret[car] = imp
   return ret

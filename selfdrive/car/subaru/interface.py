@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from cereal import car
-from numpy import np
+import numpy as np
 from common.realtime import sec_since_boot
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
