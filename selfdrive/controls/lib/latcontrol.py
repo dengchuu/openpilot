@@ -36,6 +36,8 @@ class LatControl(object):
     self.angle_ff_bp = [[0.5, 5.0],[0.0, 1.0]]
     self.oscillation_period = CP.oscillationPeriod
     self.oscillation_factor = CP.oscillationFactor
+    #self.deadzone = -CP.steerBacklash
+    self.prev_angle_rate = 0.0
 
     KpV = [interp(25.0, CP.steerKpBP, CP.steerKpV)]
     KiV = [interp(25.0, CP.steerKiBP, CP.steerKiV)]
@@ -87,6 +89,8 @@ class LatControl(object):
   def update(self, active, v_ego, angle_steers, angle_rate, torque_clipped, steer_override, CP, VM, path_plan):
 
     self.live_tune(CP)
+    accelerated_angle_rate = 2.0 * angle_rate - self.prev_angle_rate
+    self.prev_angle_rate = angle_rate
 
     if v_ego < 0.3 or not active:
       output_steer = 0.0
@@ -108,7 +112,7 @@ class LatControl(object):
         projected_desired_rate = interp(cur_time + self.total_desired_projection, path_plan.mpcTimes, path_plan.mpcRates)
         self.dampened_desired_rate += ((projected_desired_rate - self.dampened_desired_rate) / self.desired_smoothing)
 
-        projected_angle_steers = float(angle_steers) + self.total_actual_projection * float(angle_rate)
+        projected_angle_steers = float(angle_steers) + self.total_actual_projection * float(accelerated_angle_rate)
         if not steer_override:
           self.dampened_angle_steers += ((projected_angle_steers - self.dampened_angle_steers) / self.actual_smoothing)
 
@@ -120,20 +124,23 @@ class LatControl(object):
 
         angle_feedforward = self.dampened_desired_angle - path_plan.angleOffset
         if self.gernbySteer:
+          #if abs(self.dampened_desired_angle) > abs(self.dampened_angle_steers):
+          #  p_scale = interp(abs(angle_feedforward), [1.0, 2.0, 10.0], [1.0, 0.4, 0.25])
+          #else:
+          #  p_scale = interp(abs(angle_feedforward), [1.0, 2.0, 10.0], [1.0, 0.75, 0.5])
+          #p_scale = interp(abs(angle_feedforward), [0.0, 1.0, 10.0], [1.0, 0.5, 0.25])
+          p_scale = 1.0
           self.angle_ff_ratio = interp(abs(angle_feedforward), self.angle_ff_bp[0], self.angle_ff_bp[1])
           angle_feedforward *= self.angle_ff_ratio * self.angle_ff_gain
           rate_feedforward = (1.0 - self.angle_ff_ratio) * self.rate_ff_gain * self.dampened_desired_rate
           steer_feedforward = v_ego**2 * (rate_feedforward + angle_feedforward)
-          if abs(self.dampened_desired_angle) > abs(self.dampened_angle_steers):
-            p_scale = interp(abs(angle_feedforward), [1.0, 2.0, 10.0], [1.0, 0.5, 0.25])
-          else:
-            p_scale = interp(abs(angle_feedforward), [1.0, 2.0, 10.0], [1.0, 0.75, 0.5])
         else:
           p_scale = 1.0
           steer_feedforward = v_ego**2 * angle_feedforward
 
         output_steer = self.pid.update(self.dampened_desired_angle, self.dampened_angle_steers, check_saturation=(v_ego > 10),
-                          override=steer_override, feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone, p_scale=p_scale)
+                                    override=steer_override, feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone,
+                                    p_scale=p_scale)
 
         if self.gernbySteer and not torque_clipped and not steer_override and v_ego > 10.0:
           if abs(angle_steers) > (self.angle_ff_bp[0][1] / 2.0):
