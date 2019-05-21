@@ -403,6 +403,8 @@ struct Live100Data {
   startMonoTime @48 :UInt64;
   mapValid @49 :Bool;
   forceDecel @51 :Bool;
+  steerOutput @52 :List(Float32);
+  desAngle @53 :List(Float32);
 
   enabled @19 :Bool;
   active @36 :Bool;

@@ -203,7 +203,7 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
 
 
 def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
-                  driver_status, LaC, LoC, VM, angle_model_bias, passive, is_metric, cal_perc):
+                  driver_status, path_plan_monoTime, LaC, LoC, VM, angle_model_bias, passive, is_metric, cal_perc):
   """Given the state, this function returns an actuators packet"""
 
   actuators = car.CarControl.Actuators.new_message()
@@ -259,7 +259,7 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
                                               v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP)
   # Steering PID loop and lateral MPC
   actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle,
-                                                     CS.steeringPressed, CP, VM, path_plan)
+                                                     CS.steeringPressed, CP, VM, path_plan, path_plan_monoTime)
 
   # Send a "steering required alert" if saturation count has reached the limit
   if LaC.sat_flag and CP.steerLimitAlert:
@@ -345,6 +345,8 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     "canMonoTimes": list(CS.canMonoTimes),
     "planMonoTime": plan_ts,
     "pathPlanMonoTime": path_plan.logMonoTime,
+    "steerOutput": [LaC.output_steer, LaC.output_steer1, LaC.output_steer2, LaC.output_steer3],
+    "desAngle": [LaC.angle_steers_des, LaC.angle_steers_des1, LaC.angle_steers_des2, LaC.angle_steers_des3],
     "enabled": isEnabled(state),
     "active": isActive(state),
     "vEgo": CS.vEgo,
@@ -516,7 +518,7 @@ def controlsd_thread(gctx=None, rate=100):
     # Compute actuators (runs PID loops and lateral MPC)
     actuators, v_cruise_kph, driver_status, angle_model_bias, v_acc, a_acc = \
       state_control(plan.plan, path_plan.pathPlan, CS, CP, state, events, v_cruise_kph,
-                    v_cruise_kph_last, AM, rk, driver_status,
+                    v_cruise_kph_last, AM, rk, driver_status, path_plan.logMonoTime,
                     LaC, LoC, VM, angle_model_bias, passive, is_metric, cal_perc)
 
     prof.checkpoint("State Control")
