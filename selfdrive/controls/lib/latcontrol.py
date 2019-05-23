@@ -3,6 +3,8 @@ from common.numpy_fast import interp
 from cereal import car
 from common.realtime import sec_since_boot
 
+_DT_MPC = 0.05
+_DT = 0.01
 
 def get_steer_max(CP, v_ego):
   return interp(v_ego, CP.steerMaxBP, CP.steerMaxV)
@@ -39,14 +41,13 @@ class LatControl(object):
   def reset(self):
     self.pid.reset()
 
-  def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan, path_plan_monoTime):
+  def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan, rcv_times):
 
-    if path_plan_monoTime != self.prev_path_plan_time:
+    if rcv_times['pathPlan'] != self.prev_path_plan_time:
       self.prev_path_plan_angle = self.path_plan_angle
       self.path_plan_angle = path_plan.angleSteers
-      self.prev_path_plan_time= path_plan_monoTime
-      self.calc_rate = (self.path_plan_angle - self.prev_path_plan_angle) / 0.05
-      print(self.calc_rate, path_plan.rateSteers)
+      self.prev_path_plan_time= rcv_times['pathPlan']
+      self.middle_angle = (self.path_plan_angle + self.prev_path_plan_angle) / 2.0
 
     if v_ego < 0.3 or not active:
       self.output_steer = 0.0
@@ -56,13 +57,13 @@ class LatControl(object):
       self.pid.reset()
     else:
       cur_time = sec_since_boot()
-      elapsed_time = cur_time - path_plan_monoTime * 1e-9
-      #print(elapsed_time, cur_time, path_plan_monoTime * 1e-9)
+      plan_time = rcv_times['pathPlan']
+      dt = min(cur_time - plan_time, _DT_MPC + _DT) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
 
       self.angle_steers_des = path_plan.angleSteers
-      self.angle_steers_des1 = path_plan.angleSteers + elapsed_time * path_plan.rateSteers
-      self.angle_steers_des2 = self.prev_path_plan_angle + elapsed_time * path_plan.rateSteers
-      self.angle_steers_des3 = interp(cur_time, path_plan.mpcTimes, path_plan.mpcAngles)
+      self.angle_steers_des1 = self.middle_angle + path_plan.rateSteers * dt
+      self.angle_steers_des2 = self.prev_path_plan_angle + path_plan.rateSteers * dt
+      self.angle_steers_des3 = interp(cur_time + 0.025, path_plan.mpcTimes, path_plan.mpcAngles)
 
       steers_max = get_steer_max(CP, v_ego)
       self.pid.pos_limit = steers_max

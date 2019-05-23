@@ -25,6 +25,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.controls.lib.driver_monitor import DriverStatus
 from selfdrive.controls.lib.planner import _DT_MPC
 from selfdrive.locationd.calibration_helpers import Calibration, Filter
+from collections import namedtuple, defaultdict
 
 ThermalStatus = log.ThermalData.ThermalStatus
 State = log.Live100Data.ControlState
@@ -40,7 +41,7 @@ def isEnabled(state):
   return (isActive(state) or state == State.preEnabled)
 
 
-def data_sample(CI, CC, plan_sock, path_plan_sock, thermal, calibration, health, driver_monitor,
+def data_sample(rcv_times, CI, CC, plan_sock, path_plan_sock, thermal, calibration, health, driver_monitor,
                 poller, cal_status, cal_perc, overtemp, free_space, low_battery,
                 driver_status, state, mismatch_counter, params, plan, path_plan):
   """Receive data from sockets and create events for battery, temperature and disk space"""
@@ -68,6 +69,7 @@ def data_sample(CI, CC, plan_sock, path_plan_sock, thermal, calibration, health,
     elif socket is plan_sock:
       plan = messaging.recv_one(socket)
     elif socket is path_plan_sock:
+      rcv_times['pathPlan'] = sec_since_boot()
       path_plan = messaging.recv_one(socket)
 
   if td is not None:
@@ -203,7 +205,7 @@ def state_transition(CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM
 
 
 def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
-                  driver_status, path_plan_monoTime, LaC, LoC, VM, angle_model_bias, passive, is_metric, cal_perc):
+                  driver_status, rcv_times, LaC, LoC, VM, angle_model_bias, passive, is_metric, cal_perc):
   """Given the state, this function returns an actuators packet"""
 
   actuators = car.CarControl.Actuators.new_message()
@@ -259,7 +261,7 @@ def state_control(plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise
                                               v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP)
   # Steering PID loop and lateral MPC
   actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle,
-                                                     CS.steeringPressed, CP, VM, path_plan, path_plan_monoTime)
+                                                     CS.steeringPressed, CP, VM, path_plan, rcv_times)
 
   # Send a "steering required alert" if saturation count has reached the limit
   if LaC.sat_flag and CP.steerLimitAlert:
@@ -471,6 +473,7 @@ def controlsd_thread(gctx=None, rate=100):
   plan.init('plan')
   path_plan = messaging.new_message()
   path_plan.init('pathPlan')
+  rcv_times = defaultdict(int)
 
   rk = Ratekeeper(rate, print_delay_threshold=2. / 1000)
   controls_params = params.get("ControlsParams")
@@ -492,7 +495,7 @@ def controlsd_thread(gctx=None, rate=100):
 
     # Sample data and compute car events
     CS, events, cal_status, cal_perc, overtemp, free_space, low_battery, mismatch_counter, plan, path_plan  =\
-      data_sample(CI, CC, plan_sock, path_plan_sock, thermal, cal, health, driver_monitor,
+      data_sample(rcv_times, CI, CC, plan_sock, path_plan_sock, thermal, cal, health, driver_monitor,
                   poller, cal_status, cal_perc, overtemp, free_space, low_battery, driver_status,
                   state, mismatch_counter, params, plan, path_plan)
     prof.checkpoint("Sample")
@@ -518,7 +521,7 @@ def controlsd_thread(gctx=None, rate=100):
     # Compute actuators (runs PID loops and lateral MPC)
     actuators, v_cruise_kph, driver_status, angle_model_bias, v_acc, a_acc = \
       state_control(plan.plan, path_plan.pathPlan, CS, CP, state, events, v_cruise_kph,
-                    v_cruise_kph_last, AM, rk, driver_status, path_plan.logMonoTime,
+                    v_cruise_kph_last, AM, rk, driver_status, rcv_times,
                     LaC, LoC, VM, angle_model_bias, passive, is_metric, cal_perc)
 
     prof.checkpoint("State Control")
