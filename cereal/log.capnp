@@ -650,6 +650,8 @@ struct PathPlan {
   modelValid @12 :Bool;
   angleOffset @11 :Float32;
   sensorValid @14 :Bool;
+  mpcAngles @15 :List(Float32);
+  mpcTimes @16 :List(Float32);
 }
 
 struct LiveLocationData {
