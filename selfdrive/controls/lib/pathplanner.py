@@ -73,12 +73,12 @@ class PathPlanner(object):
     p_poly = libmpc_py.ffi.new("double[4]", list(self.MP.p_poly))
 
     # account for actuation delay
-    self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset_average, curvature_factor, VM.sR, CP.steerActuatorDelay)
+    self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset_bias, curvature_factor, VM.sR, CP.steerActuatorDelay)
     self.angle_steers_des_prev = np.interp(cur_time, self.mpc_times, self.mpc_angles)
 
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
-                        l_poly, r_poly, p_poly,
+                        l_poly, r_poly, p_poly, 
                         self.MP.l_prob, self.MP.r_prob, self.MP.p_prob, curvature_factor, v_ego_mpc, self.MP.lane_width)
 
     #  Check for infeasable MPC solution
