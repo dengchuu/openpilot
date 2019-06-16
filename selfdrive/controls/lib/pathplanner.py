@@ -90,8 +90,8 @@ class PathPlanner(object):
                         float(math.degrees(self.mpc_solution[0].delta[2] * VM.sR) + angle_offset_bias)]
 
       self.mpc_times = [cur_time,
-                        cur_time + _DT_HALF_MPC,
-                        cur_time + _DT_HALF_MPC + _DT_MPC]
+                        cur_time + _DT_MPC,
+                        cur_time + _DT_MPC + _DT_MPC]
 
       self.angle_steers_des_mpc = self.mpc_angles[1]
       rate_desired = math.degrees(self.mpc_solution[0].rate[0] * VM.sR)
