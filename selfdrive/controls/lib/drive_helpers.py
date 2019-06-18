@@ -6,7 +6,7 @@ DT = 0.01  # Controlsd runs at 100Hz
 
 # kph
 V_CRUISE_MAX = 144
-V_CRUISE_MIN = 8
+V_CRUISE_MIN = 8 
 V_CRUISE_DELTA = 8
 V_CRUISE_ENABLE_MIN = 40
 

@@ -66,10 +66,9 @@ def dashboard_thread(rate=100):
     tunePush.send_json(config)
     tunePush = None
 
+  lateral_type = ""
   tuneSub.setsockopt(zmq.SUBSCRIBE, str(user_id))
   #influxFormatString = user_id + ",sources=capnp angle_accel=%s,damp_angle_rate=%s,angle_rate=%s,damp_angle=%s,apply_steer=%s,noise_feedback=%s,ff_standard=%s,ff_rate=%s,ff_angle=%s,angle_steers_des=%s,angle_steers=%s,dampened_angle_steers_des=%s,steer_override=%s,v_ego=%s,p2=%s,p=%s,i=%s,f=%s %s\n"
-  influxFormatString = user_id + ",sources=capnp angle_steers_des=%s,angle_steers=%s,steer_override=%s,v_ego=%s,p=%s,i=%s,f=%s %s\n"
-  kegmanFormatString = user_id + ",sources=kegman KpV=%s,KiV=%s,Kf=%s %s\n"
   mapFormatString = "location,user=" + user_id + " latitude=%s,longitude=%s,altitude=%s,speed=%s,bearing=%s,accuracy=%s,speedLimitValid=%s,speedLimit=%s,curvatureValid=%s,curvature=%s,wayId=%s,distToTurn=%s,mapValid=%s,speedAdvisoryValid=%s,speedAdvisory=%s,speedAdvisoryValid=%s,speedAdvisory=%s,speedLimitAheadValid=%s,speedLimitAhead=%s,speedLimitAheadDistance=%s %s\n"
   canFormatString="CANData,user=" + user_id + ",src=%s,pid=%s d1=%si,d2=%si "
   liveStreamFormatString = "curvature,user=" + user_id + " l_curv=%s,p_curv=%s,r_curv=%s,map_curv=%s,map_rcurv=%s,map_rcurvx=%s,v_curv=%s,l_diverge=%s,r_diverge=%s %s\n"
@@ -147,6 +146,15 @@ def dashboard_thread(rate=100):
         _controlsState = messaging.drain_sock(socket)
         #print("controlsState")
         for l100 in _controlsState:
+          if lateral_type == "":
+            if l100.controlsState.lateralControlState.which == "pidState":
+              lateral_type = "pid"
+              influxFormatString = user_id + ",sources=capnp angle_steers_des=%s,angle_steers=%s,steer_override=%s,v_ego=%s,p=%s,i=%s,f=%s,output=%s %s\n"
+              kegmanFormatString = user_id + ",sources=kegman KpV=%s,KiV=%s,Kf=%s %s\n"
+            else:
+              lateral_type = "indi"
+              influxFormatString = user_id + ",sources=capnp angle_steers_des=%s,angle_steers=%s,steer_override=%s,v_ego=%s,output=%s,indi_angle=%s,indi_rate=%s,indi_rate_des=%s,indi_accel=%s,indi_accel_des=%s,accel_error=%s,delayed_output=%s,indi_delta=%s %s\n"
+              kegmanFormatString = user_id + ",sources=kegman time_const=%s,act_effect=%s,inner_gain=%s,outer_gain=%s %s\n"
           vEgo = l100.controlsState.vEgo
           active = l100.controlsState.active
           #active = True
@@ -159,9 +167,17 @@ def dashboard_thread(rate=100):
           if vEgo > 0 and active:
             dat = l100.controlsState
             #print(dat)
-            influxDataString += ("%0.3f,%0.2f,%d,%0.1f,%0.4f,%0.4f,%0.4f,%d|" %
-                (dat.angleSteersDes, dat.angleSteers,  dat.steerOverride, vEgo,
-                dat.lateralControlState.pidState.p, dat.lateralControlState.pidState.i, dat.lateralControlState.pidState.f, receiveTime))
+
+            if lateral_type == "pid":
+              influxDataString += ("%0.3f,%0.2f,%d,%0.1f,%0.4f,%0.4f,%0.4f,%0.4f,%d|" %
+                  (dat.angleSteersDes, dat.angleSteers,  dat.steerOverride, vEgo,
+                  dat.lateralControlState.pidState.p, dat.lateralControlState.pidState.i, dat.lateralControlState.pidState.f,dat.lateralControlState.pidState.output, receiveTime))
+            else:
+              s = dat.lateralControlState.indiState
+              influxDataString += ("%0.3f,%0.2f,%d,%0.1f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%d|" %
+                  (dat.angleSteersDes, dat.angleSteers,  dat.steerOverride, vEgo,
+                  s.output, s.steerAngle, s.steerRate, s.rateSetPoint, s.steerAccel, s.accelSetPoint, s.accelError, s.delayedOutput, s.delta, receiveTime))
+
             #print(dat.upFine, dat.uiFine)
             frame_count += 1
 
@@ -211,13 +227,24 @@ def dashboard_thread(rate=100):
           if os.path.isfile('/data/kegman.json'):
             with open('/data/kegman.json', 'r') as f:
               config = json.load(f)
-              steerKpV = config['Kp']
-              steerKiV = config['Ki']
-              steerKf = config['Kf']
+              if lateral_type == "pid":
+                steerKpV = config['Kp']
+                steerKiV = config['Ki']
+                steerKf = config['Kf']
 
-              kegmanDataString += ("%s,%s,%s,%s|" % \
-                    (steerKpV, steerKiV, steerKf, receiveTime))
+                kegmanDataString += ("%s,%s,%s,%s|" % \
+                      (steerKpV, steerKiV, steerKf, receiveTime))
+              else:
+                timeConst = config['timeConst']
+                actEffect = config['actEffect']
+                innerGain = config['innerGain']
+                outerGain = config['outerGain']
+
+                kegmanDataString += ("%s,%s,%s,%s,%s|" % \
+                      (timeConst, actEffect, innerGain, outerGain, receiveTime))
+                print(kegmanDataString, kegmanFormatString)
               insertString += kegmanFormatString + "~" + kegmanDataString + "!"
+
         except:
           kegman_valid = False
 

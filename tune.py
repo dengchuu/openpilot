@@ -44,7 +44,11 @@ button_delay = 0.2
 kegman = kegman_conf()
 #kegman.conf['tuneGernby'] = "1"
 #kegman.write_config(kegman.conf)
-param = ["Kp", "Ki", "Kf"]
+if kegman.conf["type"] == "pid":
+  param = ["Kp", "Ki", "Kf", "dampTime"]
+else:
+  param = ["timeConst", "actEffect", "innerGain", "outerGain"]
+print(param)
 
 try:
   devnull = open(os.devnull, 'w')
@@ -79,31 +83,57 @@ process = subprocess.Popen(cmd, shell=True,
 j = 0
 
 while True:
-  print ""
-  print print_letters(param[j][0:9])
-  print ""
-  print print_letters(kegman.conf[param[j]])
-  print ""
-  print "reactMPC is an adjustment to the time projection of the MPC"
-  print "angle used in the dampening calculation.  Increasing this value"
-  print "would cause the vehicle to turn sooner."
-  print ""
-  print ""
-  print "reactSteer is an adjustment to the time projection of steering"
-  print "rate to determine future steering angle.  If the steering is "
-  print "too shaky, decrease this value (may be negative).  If the"
-  print "steering response is too slow, increase this value."
-  print ""
-  print ""
-  print "dampMPC / dampSteer is the amount of time that the samples"
-  print "will be projected and averaged to smooth the values"
-  print ""
-  print ""
-  print ("Press 1, 3, 5, 7 to incr 0.1, 0.05, 0.01, 0.001")
-  print ("press a, d, g, j to decr 0.1, 0.05, 0.01, 0.001")
-  print ("press 0 / L to make the value 0 / 1")
-  print ("press SPACE / m for next /prev parameter")
-  print ("press z to quit")
+  if kegman.conf["type"] == "pid":
+    print ""
+    print print_letters(param[j][0:9])
+    print ""
+    print print_letters(kegman.conf[param[j]])
+    print ""
+    print "reactMPC is an adjustment to the time projection of the MPC"
+    print "angle used in the dampening calculation.  Increasing this value"
+    print "would cause the vehicle to turn sooner."
+    print ""
+    print ""
+    print "reactSteer is an adjustment to the time projection of steering"
+    print "rate to determine future steering angle.  If the steering is "
+    print "too shaky, decrease this value (may be negative).  If the"
+    print "steering response is too slow, increase this value."
+    print ""
+    print ""
+    print "dampMPC / dampSteer is the amount of time that the samples"
+    print "will be projected and averaged to smooth the values"
+    print ""
+    print ""
+    print ("Press 1, 3, 5, 7 to incr 0.1, 0.05, 0.01, 0.001")
+    print ("press a, d, g, j to decr 0.1, 0.05, 0.01, 0.001")
+    print ("press 0 / L to make the value 0 / 1")
+    print ("press SPACE / m for next /prev parameter")
+    print ("press z to quit")
+
+    if float(kegman.conf['Kf']) < 0 and float(kegman.conf['Kf']) != -1:
+      kegman.conf['Kf'] = "0"
+
+    if float(kegman.conf['Kf']) > 2:
+      kegman.conf['Kf'] = "2"
+
+    if float(kegman.conf['Ki']) < 0 and float(kegman.conf['Ki']) != -1:
+      kegman.conf['Ki'] = "0"
+
+    if float(kegman.conf['Ki']) > 2:
+      kegman.conf['Ki'] = "2"
+
+    if float(kegman.conf['Kp']) < 0 and float(kegman.conf['Kp']) != -1:
+      kegman.conf['Kp'] = "0"
+
+    if float(kegman.conf['Kp']) > 3:
+      kegman.conf['Kp'] = "3"
+  else:
+    print ""
+    print print_letters(param[j][0:9])
+    print ""
+    print print_letters(kegman.conf[param[j]])
+    print ""
+    print ("press z to quit")
 
   char  = getch()
   write_json = False
@@ -162,25 +192,6 @@ while True:
   elif (char == "z"):
     process.kill()
     break
-
-
-  if float(kegman.conf['Kf']) < 0 and float(kegman.conf['Kf']) != -1:
-    kegman.conf['Kf'] = "0"
-
-  if float(kegman.conf['Kf']) > 2:
-    kegman.conf['Kf'] = "2"
-
-  if float(kegman.conf['Ki']) < 0 and float(kegman.conf['Ki']) != -1:
-    kegman.conf['Ki'] = "0"
-
-  if float(kegman.conf['Ki']) > 2:
-    kegman.conf['Ki'] = "2"
-
-  if float(kegman.conf['Kp']) < 0 and float(kegman.conf['Kp']) != -1:
-    kegman.conf['Kp'] = "0"
-
-  if float(kegman.conf['Kp']) > 3:
-    kegman.conf['Kp'] = "3"
 
   if write_json:
     kegman.write_config(kegman.conf)

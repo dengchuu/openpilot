@@ -1,16 +1,20 @@
 import math
 import numpy as np
-
+from common.numpy_fast import interp
 from selfdrive.car.toyota.carcontroller import SteerLimitParams
 from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.controls.lib.drive_helpers import get_steer_max, DT
 from common.numpy_fast import clip
 from cereal import log
-
+from common.realtime import sec_since_boot
+from selfdrive.kegman_conf import kegman_conf
+from common.numpy_fast import interp
 
 class LatControlINDI(object):
   def __init__(self, CP):
     self.angle_steers_des = 0.
+    kegman = kegman_conf(CP)
+    self.frame = 0
 
     A = np.matrix([[1.0, DT, 0.0],
                    [0.0, 1.0, DT],
@@ -41,6 +45,24 @@ class LatControlINDI(object):
 
     self.reset()
 
+  def live_tune(self, CP):
+    self.frame += 1
+    if self.frame % 300 == 0:
+      # live tuning through /data/openpilot/tune.py overrides interface.py settings
+      kegman = kegman_conf()
+      rc = float(kegman.conf['timeConst'])
+      g = float(kegman.conf['actEffect'])
+      og = float(kegman.conf['outerGain'])
+      ig = float(kegman.conf['innerGain'])
+
+      if rc != self.RC or g != self.G or og != self.outer_loop_gain or ig != self.inner_loop_gain:
+        self.RC = rc
+        self.G = g
+        self.outer_loop_gain = og
+        self.inner_loop_gain = ig
+        self.alpha = 1. - DT / (self.RC + DT)
+        self.reset
+
   def reset(self):
     self.delayed_output = 0.
     self.output_steer = 0.
@@ -48,9 +70,13 @@ class LatControlINDI(object):
 
   def update(self, active, v_ego, angle_steers, angle_steers_rate, steer_override, CP, VM, path_plan):
     # Update Kalman filter
+
+    self.live_tune(CP)
+
     y = np.matrix([[math.radians(angle_steers)], [math.radians(angle_steers_rate)]])
     self.x = np.dot(self.A_K, self.x) + np.dot(self.K, y)
 
+    self.damp_angle_steers = math.degrees(self.x[0])
     indi_log = log.ControlsState.LateralINDIState.new_message()
     indi_log.steerAngle = math.degrees(self.x[0])
     indi_log.steerRate = math.degrees(self.x[1])
@@ -61,8 +87,12 @@ class LatControlINDI(object):
       self.output_steer = 0.0
       self.delayed_output = 0.0
     else:
+      #if sec_since_boot() < path_plan.mpcTimes[1]:
       self.angle_steers_des = path_plan.angleSteers
       self.rate_steers_des = path_plan.rateSteers
+      #else:
+      #  self.angle_steers_des = path_plan.mpcAngles[2]
+      #  self.rate_steers_des = path_plan.mpcRates[2]
 
       steers_des = math.radians(self.angle_steers_des)
       rate_des = math.radians(self.rate_steers_des)

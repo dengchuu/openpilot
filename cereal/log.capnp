@@ -651,6 +651,7 @@ struct PathPlan {
   angleOffset @11 :Float32;
   sensorValid @14 :Bool;
   mpcAngles @15 :List(Float32);
+  mpcRates @17 :List(Float32);
   mpcTimes @16 :List(Float32);
 }
 

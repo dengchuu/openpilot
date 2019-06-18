@@ -47,6 +47,7 @@ class PathPlanner(object):
     self.cur_state[0].psi = 0.0
     self.cur_state[0].delta = 0.0
     self.mpc_angles = [0.0, 0.0, 0.0]
+    self.mpc_rates = [0.0, 0.0, 0.0]
     self.mpc_times = [0.0, 0.0, 0.0]
 
     self.angle_steers_des = 0.0
@@ -78,20 +79,22 @@ class PathPlanner(object):
 
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
-                        l_poly, r_poly, p_poly, 
+                        l_poly, r_poly, p_poly,
                         self.MP.l_prob, self.MP.r_prob, self.MP.p_prob, curvature_factor, v_ego_mpc, self.MP.lane_width)
 
     #  Check for infeasable MPC solution
     mpc_nans = np.any(np.isnan(list(self.mpc_solution[0].delta)))
 
     if not mpc_nans:
-      self.mpc_angles = [self.angle_steers_des_prev,
+      self.mpc_angles = [np.interp(cur_time, self.mpc_times, self.mpc_angles),
                         float(math.degrees(self.mpc_solution[0].delta[1] * VM.sR) + angle_offset_bias),
                         float(math.degrees(self.mpc_solution[0].delta[2] * VM.sR) + angle_offset_bias)]
-
       self.mpc_times = [cur_time,
-                        cur_time + _DT_MPC,
-                        cur_time + _DT_MPC + _DT_MPC]
+                        rcv_times['model'] + _DT_MPC,
+                        rcv_times['model'] + _DT_MPC + _DT_MPC]
+      self.mpc_rates = [(self.mpc_angles[1] - self.mpc_angles[0]) / (self.mpc_times[1] - self.mpc_times[0]), 
+                        (self.mpc_angles[2] - self.mpc_angles[1]) / (self.mpc_times[2] - self.mpc_times[1]),
+                        0.0]
 
       self.angle_steers_des_mpc = self.mpc_angles[1]
       rate_desired = math.degrees(self.mpc_solution[0].rate[0] * VM.sR)
@@ -124,6 +127,7 @@ class PathPlanner(object):
     plan_send.pathPlan.angleSteers = float(self.angle_steers_des_mpc)
     plan_send.pathPlan.mpcAngles = map(float, self.mpc_angles)
     plan_send.pathPlan.mpcTimes = map(float, self.mpc_times)
+    plan_send.pathPlan.mpcRates = map(float, self.mpc_rates)
     plan_send.pathPlan.rateSteers = float(rate_desired)
     plan_send.pathPlan.angleOffset = float(angle_offset_average)
     plan_send.pathPlan.valid = bool(plan_valid)
