@@ -45,9 +45,9 @@ kegman = kegman_conf()
 #kegman.conf['tuneGernby'] = "1"
 #kegman.write_config(kegman.conf)
 if kegman.conf["type"] == "pid":
-  param = ["Kp", "Ki", "Kf", "dampTime"]
+  param = ["Kp", "Ki", "Kf", "dampTime", "reactMPC"]
 else:
-  param = ["timeConst", "actEffect", "innerGain", "outerGain"]
+  param = ["timeConst", "actEffect", "innerGain", "outerGain", "reactMPC"]
 print(param)
 
 try:

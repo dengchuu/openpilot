@@ -15,6 +15,8 @@ class LatControlINDI(object):
     self.angle_steers_des = 0.
     kegman = kegman_conf(CP)
     self.frame = 0
+    self.damp_angle_steers_des = 0.0
+    self.damp_rate_steers_des = 0.0
 
     A = np.matrix([[1.0, DT, 0.0],
                    [0.0, 1.0, DT],
@@ -42,6 +44,7 @@ class LatControlINDI(object):
     self.outer_loop_gain = CP.lateralTuning.indi.outerLoopGain
     self.inner_loop_gain = CP.lateralTuning.indi.innerLoopGain
     self.alpha = 1. - DT / (self.RC + DT)
+    self.react_mpc = CP.lateralTuning.indi.reactMPC
 
     self.reset()
 
@@ -54,6 +57,7 @@ class LatControlINDI(object):
       g = float(kegman.conf['actEffect'])
       og = float(kegman.conf['outerGain'])
       ig = float(kegman.conf['innerGain'])
+      self.react_mpc = (float(kegman.conf['reactMPC']))
 
       if rc != self.RC or g != self.G or og != self.outer_loop_gain or ig != self.inner_loop_gain:
         self.RC = rc
@@ -86,14 +90,17 @@ class LatControlINDI(object):
       indi_log.active = False
       self.output_steer = 0.0
       self.delayed_output = 0.0
+      self.damp_angle_steers_des = 0.0
+      self.damp_rate_steers_des = 0.0
     else:
-      #if sec_since_boot() < path_plan.mpcTimes[1]:
       self.angle_steers_des = path_plan.angleSteers
       self.rate_steers_des = path_plan.rateSteers
-      #else:
-      #  self.angle_steers_des = path_plan.mpcAngles[2]
-      #  self.rate_steers_des = path_plan.mpcRates[2]
+      #self.angle_steers_des = path_plan.angleSteers
+      #self.damp_angle_steers_des += (interp(sec_since_boot() + 0.5 + self.react_mpc, path_plan.mpcTimes, path_plan.mpcAngles) - self.damp_angle_steers_des) / 5.0
+      #self.damp_rate_steers_des += (interp(sec_since_boot() + 0.5 + self.react_mpc, path_plan.mpcTimes, path_plan.mpcRates) - self.damp_rate_steers_des) / 5.0
 
+      #steers_des = math.radians(self.damp_angle_steers_des)
+      #rate_des = math.radians(self.damp_rate_steers_des)
       steers_des = math.radians(self.angle_steers_des)
       rate_des = math.radians(self.rate_steers_des)
 

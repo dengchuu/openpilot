@@ -180,13 +180,15 @@ class CarInterface(object):
 
     if candidate in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
       ret.lateralTuning.init('indi')
+      ret.steerRateCost = 0.05
     else:
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kf = 0.00006 # conservative feed-forward
+      ret.steerRateCost = 0.5
 
     if candidate in [CAR.CIVIC, CAR.CIVIC_BOSCH]:
       stop_and_go = True
-      ret.mass = mass_civic   
+      ret.mass = mass_civic
       ret.wheelbase = wheelbase_civic
       ret.centerToFront = centerToFront_civic
       ret.steerRatio = 14.63  # 10.93 is end-to-end spec
@@ -220,7 +222,8 @@ class CarInterface(object):
       ret.lateralTuning.indi.innerLoopGain = 4.0
       ret.lateralTuning.indi.outerLoopGain = 2.0
       ret.lateralTuning.indi.timeConstant = 1.0
-      ret.lateralTuning.indi.actuatorEffectiveness = 3.0
+      ret.lateralTuning.indi.reactMPC = 0.0
+      ret.lateralTuning.indi.actuatorEffectiveness = 1.0
 
     elif candidate == CAR.ACURA_ILX:
       stop_and_go = False
@@ -386,7 +389,7 @@ class CarInterface(object):
     ret.startAccel = 0.5
 
     ret.steerActuatorDelay = 0.1
-    ret.steerRateCost = 0.2
+    #ret.steerRateCost = 0.5
 
     return ret
 
