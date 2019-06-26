@@ -72,6 +72,7 @@ class CarInterface(object):
     if candidate != CAR.PRIUS:
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.steerRateCost = 0.5
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
@@ -87,8 +88,8 @@ class CarInterface(object):
       ret.lateralTuning.indi.timeConstant = 1.0
       ret.lateralTuning.indi.actuatorEffectiveness = 1.0
 
-      ret.steerActuatorDelay = 0.5
-      ret.steerRateCost = 0.5
+      ret.steerActuatorDelay = 0.1
+      ret.steerRateCost = 0.1
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       stop_and_go = True if (candidate in CAR.RAV4H) else False
@@ -180,7 +181,6 @@ class CarInterface(object):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
       ret.lateralTuning.pid.kf = 0.00007818594
 
-    ret.steerRateCost = 0.1
     ret.centerToFront = ret.wheelbase * 0.44
 
     #detect the Pedal address
