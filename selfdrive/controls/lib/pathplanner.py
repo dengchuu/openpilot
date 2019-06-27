@@ -75,7 +75,7 @@ class PathPlanner(object):
     p_poly = libmpc_py.ffi.new("double[4]", list(self.MP.p_poly))
 
     # account for actuation delay
-    self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset_average, curvature_factor, VM.sR, CP.steerActuatorDelay)
+    self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset_bias, curvature_factor, VM.sR, CP.steerActuatorDelay)
     self.angle_steers_des_prev = np.interp(cur_time, self.mpc_times, self.mpc_angles)
 
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
@@ -87,7 +87,7 @@ class PathPlanner(object):
     mpc_nans = np.any(np.isnan(list(self.mpc_solution[0].delta)))
 
     if not mpc_nans:
-      self.mpc_angles[0] = angle_steers + controls_state.controlsState.angleModelBias
+      self.mpc_angles[0] = angle_steers
       self.mpc_times[0] = rcv_times['model']
       oversample_limit = 19 if v_ego == 0 else 4 + min(15, int(800.0 / v_ego))
       for i in range(1,20):

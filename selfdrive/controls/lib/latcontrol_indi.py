@@ -15,6 +15,8 @@ class LatControlINDI(object):
     self.angle_steers_des = 0.
     kegman = kegman_conf(CP)
     self.frame = 0
+    self.damp_angle_steers_des = 0.0
+    self.damp_rate_steers_des = 0.0
 
     A = np.matrix([[1.0, DT, 0.0],
                    [0.0, 1.0, DT],
@@ -55,6 +57,7 @@ class LatControlINDI(object):
       g = float(kegman.conf['actEffect'])
       og = float(kegman.conf['outerGain'])
       ig = float(kegman.conf['innerGain'])
+      self.react_mpc = (float(kegman.conf['reactMPC']))
 
       if rc != self.RC or g != self.G or og != self.outer_loop_gain or ig != self.inner_loop_gain:
         self.RC = rc
@@ -92,9 +95,11 @@ class LatControlINDI(object):
     else:
       self.angle_steers_des = path_plan.angleSteers
       self.rate_steers_des = path_plan.rateSteers
- 
-      steers_des = math.radians(self.angle_steers_des)
-      rate_des = math.radians(self.rate_steers_des)
+      self.damp_angle_steers_des += (interp(sec_since_boot() + self.react_mpc, path_plan.mpcTimes, path_plan.mpcAngles) - self.damp_angle_steers_des) / 5.0
+      self.damp_rate_steers_des += (interp(sec_since_boot() + self.react_mpc, path_plan.mpcTimes, path_plan.mpcRates) - self.damp_rate_steers_des) / 5.0
+
+      steers_des = math.radians(self.damp_angle_steers_des)
+      rate_des = math.radians(self.damp_rate_steers_des)
 
       # Expected actuator value
       self.delayed_output = self.delayed_output * self.alpha + self.output_steer * (1. - self.alpha)
