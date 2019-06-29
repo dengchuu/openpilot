@@ -1,6 +1,8 @@
 import struct
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import CAR, HONDA_BOSCH
+from common.numpy_fast import clip
+from ctypes import create_string_buffer
 
 # *** Honda specific ***
 def can_cksum(mm):
@@ -18,6 +20,11 @@ def fix(msg, addr):
   msg2 = msg[0:-1] + chr(ord(msg[-1]) | can_cksum(struct.pack("I", addr)+msg))
   return msg2
 
+def make_can_msg(addr, dat, idx, alt):
+  if idx is not None:
+    dat += chr(idx << 4)
+    dat = fix(dat, addr)
+  return [addr, 0, dat, alt]
 
 def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, chime, fcw, idx):
   # TODO: do we loose pressure if we keep pump off for long?
@@ -117,7 +124,7 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, openp
       'HUD_LEAD': hud.car,
       'HUD_DISTANCE': 0x02,
       'ACC_ON': hud.car != 0,
-      'SET_TO_X3': 0x03,
+      #'SET_TO_X3': 0x03,
     }
   else:
     acc_hud_values = {
@@ -163,6 +170,21 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, openp
     commands.append(packer.make_can_msg('RADAR_HUD', 0, radar_hud_values, idx))
   return commands
 
+def create_radar_commands(v_ego, idx):
+  commands = []
+  v_ego_kph = clip(int(round(v_ego * CV.MS_TO_KPH)), 0, 255)
+  speed = struct.pack('!B', v_ego_kph)
+
+  msg_0x300 = ("\xf9" + speed + "\x8a\xd0" +
+              ("\x20" if idx == 0 or idx == 3 else "\x00") +
+              "\x00\x00")
+  commands.append(make_can_msg(0x300, msg_0x300, idx, 1))
+
+   # car_fingerprint == CAR.PILOT:
+  msg_0x301 = "\x00\x00\x56\x02\x58\x00\x00"
+  commands.append(make_can_msg(0x301, msg_0x301, idx, 1))
+
+  return commands
 
 def spam_buttons_command(packer, button_val, idx):
   values = {
@@ -170,3 +192,15 @@ def spam_buttons_command(packer, button_val, idx):
     'CRUISE_SETTING': 0,
   }
   return packer.make_can_msg("SCM_BUTTONS", 0, values, idx)
+
+def create_radar_VIN_msg(id,radarVIN,radarCAN,radarTriggerMessage,useRadar,radarPosition,radarEpasType):
+  msg_id = 0x560
+  msg_len = 8
+  msg = create_string_buffer(msg_len)
+  if id == 0:
+    struct.pack_into('BBBBBBBB', msg, 0, id,radarCAN,useRadar + (radarPosition << 1) + (radarEpasType << 3),((radarTriggerMessage >> 8) & 0xFF),(radarTriggerMessage & 0xFF),ord(radarVIN[0]),ord(radarVIN[1]),ord(radarVIN[2]))
+  if id == 1:
+    struct.pack_into('BBBBBBBB', msg, 0, id,ord(radarVIN[3]),ord(radarVIN[4]),ord(radarVIN[5]),ord(radarVIN[6]),ord(radarVIN[7]),ord(radarVIN[8]),ord(radarVIN[9]))
+  if id == 2:
+    struct.pack_into('BBBBBBBB', msg, 0, id,ord(radarVIN[10]),ord(radarVIN[11]),ord(radarVIN[12]),ord(radarVIN[13]),ord(radarVIN[14]),ord(radarVIN[15]),ord(radarVIN[16]))
+  return [msg_id, 0, msg.raw, 0]

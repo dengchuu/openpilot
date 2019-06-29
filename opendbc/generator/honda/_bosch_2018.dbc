@@ -114,7 +114,7 @@ BO_ 464 WHEEL_SPEEDS: 8 VSA
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
 
 BO_ 479 ACC_CONTROL: 8 EON
- SG_ SET_TO_1 : 20|5@0+ (1,0) [0|1] "" PCM
+ SG_ SET_TO_1 : 20|5@0+ (1,0) [0|1] "" PCM 
  SG_ CONTROL_ON : 23|3@0+ (1,0) [0|5] "" XXX
  SG_ STATE_FLAG : 7|5@0+ (1,0) [0|0] "" XXX
  SG_ GAS_COMMAND : 2|11@0+ (1,0) [0|0] "" PCM
@@ -198,8 +198,7 @@ BO_ 780 ACC_HUD: 8 ADAS
  SG_ ACC_PROBLEM : 37|1@0+ (1,0) [0|1] "" BDY
  SG_ ACC_ON : 52|1@0+ (1,0) [0|1] "" XXX
  SG_ BOH_6 : 51|4@0+ (1,0) [0|15] "" XXX
- SG_ IMPERIAL_UNIT : 55|1@0+ (1,0) [0|1] "" XXX
- SG_ SET_TO_X1 : 56|1@0+ (1,0) [0|1] "" XXX
+ SG_ SET_TO_X3 : 55|2@0+ (1,0) [0|3] "" XXX
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
 
