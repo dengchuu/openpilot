@@ -85,7 +85,7 @@ def get_can_signals(CP):
       ("GEARBOX", 100),
     ]
 
-  if CP.radarOffCan:
+  if CP.carFingerprint in HONDA_BOSCH:
     # Civic is only bosch to use the same brake message as other hondas.
     if CP.carFingerprint not in (CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CRV_HYBRID):
       signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
@@ -95,6 +95,12 @@ def get_can_signals(CP):
                 ("EPB_STATE", "EPB_STATUS", 0),
                 ("CRUISE_SPEED", "ACC_HUD", 0)]
     checks += [("GAS_PEDAL_2", 100)]
+
+    # TODO: why were these removed from bosch?
+    signals += [("BRAKE_ERROR_1", "STANDSTILL", 1),
+                ("BRAKE_ERROR_2", "STANDSTILL", 1)]
+    checks += [("STANDSTILL", 50)]
+
   else:
     # Nidec signals.
     signals += [("BRAKE_ERROR_1", "STANDSTILL", 1),
@@ -234,7 +240,7 @@ class CarState(object):
     self.steer_error = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [0, 2, 3, 4, 6]
     self.steer_not_allowed = cp.vl["STEER_STATUS"]['STEER_STATUS']  not in [0, 4]  # 4 can be caused by bump OR steering nudge from driver
     self.steer_warning = cp.vl["STEER_STATUS"]['STEER_STATUS'] not in [0, 3, 4]   # 3 is low speed lockout, not worth a warning
-    if self.CP.radarOffCan:
+    if not self.CP.openpilotLongitudinalControl:
       self.brake_error = 0
     else:
       self.brake_error = cp.vl["STANDSTILL"]['BRAKE_ERROR_1'] or cp.vl["STANDSTILL"]['BRAKE_ERROR_2']
@@ -302,9 +308,7 @@ class CarState(object):
     self.steer_torque_driver = cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD[self.CP.carFingerprint]
 
-    self.brake_switch = cp.vl["POWERTRAIN_DATA"]['BRAKE_SWITCH']
-
-    if self.CP.radarOffCan:
+    if self.CP.carFingerprint in HONDA_BOSCH:
       self.stopped = cp.vl["ACC_HUD"]['CRUISE_SPEED'] == 252.
       self.cruise_speed_offset = calc_cruise_offset(0, self.v_ego)
       if self.CP.carFingerprint in (CAR.CIVIC_BOSCH, CAR.ACCORDH, CAR.CRV_HYBRID):
@@ -315,6 +319,7 @@ class CarState(object):
         self.brake_switch_prev = self.brake_switch
         self.brake_switch_ts = cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH']
       else:
+        self.brake_switch = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
         self.brake_pressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
       # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
       self.v_cruise_pcm = self.v_cruise_pcm_prev if cp.vl["ACC_HUD"]['CRUISE_SPEED'] > 160.0 else cp.vl["ACC_HUD"]['CRUISE_SPEED']

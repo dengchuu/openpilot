@@ -15,7 +15,8 @@ from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V_FOLLOWING
 
 # msgs sent for steering controller by camera module on can 0.
 # those messages are mutually exclusive on CRV and non-CRV cars
-CAMERA_MSGS = [0xe4, 0x194]
+NIDEC_CAMERA_MSGS = [0xe4, 0x194]
+BOSCH_RADAR_MSGS = [0xE4, 0x1DF, 0x1EF, 0x30C, 0x33D, 0x39F]
 
 A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
 
@@ -146,17 +147,17 @@ class CarInterface(object):
       ret.safetyModel = car.CarParams.SafetyModels.hondaBosch
       ret.enableCamera = True
       ret.radarOffCan = True
-      ret.openpilotLongitudinalControl = False
+      ret.openpilotLongitudinalControl = not any(x for x in BOSCH_RADAR_MSGS if x in fingerprint)
+      ret.enableCruise = not ret.openpilotLongitudinalControl
     else:
       ret.safetyModel = car.CarParams.SafetyModels.honda
-      ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint)
+      ret.enableCamera = not any(x for x in NIDEC_CAMERA_MSGS if x in fingerprint)
       ret.enableGasInterceptor = 0x201 in fingerprint
       ret.openpilotLongitudinalControl = ret.enableCamera
+      ret.enableCruise = not ret.enableGasInterceptor
 
     cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warn("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
-
-    ret.enableCruise = not ret.enableGasInterceptor
 
     # kg of standard extra cargo to count for drive, gas, etc...
     std_cargo = 136
@@ -262,7 +263,11 @@ class CarInterface(object):
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 16.0   # 12.3 is spec end-to-end
       tire_stiffness_factor = 0.677
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
+      # CR-V with modified steering FW
+      is_fw_modified = os.getenv("DONGLE_ID") in ['91c9befc4a0603cd']
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.075], [0.0225]] if is_fw_modified else [[0.6], [0.18]]
+      if is_fw_modified:
+        ret.lateralTuning.pid.kf = 0.00002
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
@@ -380,7 +385,8 @@ class CarInterface(object):
     ret.steerMaxV = [1.]   # max steer allowed
 
     ret.gasMaxBP = [0.]  # m/s
-    ret.gasMaxV = [0.6] if ret.enableGasInterceptor else [0.] # max gas allowed
+    # TODO: what is the correct way to handle this?
+    ret.gasMaxV = [1.] #if ret.enableGasInterceptor else [0.] # max gas allowed
     ret.brakeMaxBP = [5., 20.]  # m/s
     ret.brakeMaxV = [1., 0.8]   # max brake allowed
 
@@ -544,7 +550,7 @@ class CarInterface(object):
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if ret.gearShifter == 'reverse':
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-    if self.CS.brake_hold and self.CS.CP.carFingerprint not in HONDA_BOSCH:
+    if self.CS.brake_hold and self.CS.CP.openpilotLongitudinalControl:
       events.append(create_event('brakeHold', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if self.CS.park_brake:
       events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
