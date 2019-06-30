@@ -136,9 +136,7 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
       radar_VIN[16] = radarVin_b7;
       tesla_radar_vin_complete = tesla_radar_vin_complete | 4;
     }
-    else {
-      return 0;
-    }
+    // don't actually forward this message to the BUS, since it's just a transport for radar_VIN
     return 0;
   }
 
