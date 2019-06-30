@@ -139,6 +139,7 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     else {
       return 0;
     }
+    return 0;
   }
 
   // disallow actuator commands if gas or brake (with vehicle moving) are pressed

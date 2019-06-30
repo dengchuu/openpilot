@@ -138,7 +138,7 @@ class RadarInterface(object):
               self.pts[ii].vRel = cpt['LongSpeed']
               self.pts[ii].aRel = float('nan')
               self.pts[ii].yvRel = float('nan')
-              self.pts[ii].measured = True
+              self.pts[ii].measured = True 
               #self.pts[ii].aRel = cpt['LongAccel']
               #self.pts[ii].yvRel = self.rcp.vl[ii+1]['LatSpeed']
               #self.pts[ii].measured = bool(cpt['Meas'])

@@ -9,7 +9,7 @@ from selfdrive.can.packer import CANPacker
 
 # Accel limits
 ACCEL_HYST_GAP = 0.02 # don't change accel command for small oscilalitons within this value
-ACCEL_MAX = 800.
+ACCEL_MAX = 2000.
 ACCEL_MIN = -1599.
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
@@ -163,6 +163,7 @@ class CarController(object):
     apply_accel = actuators.gas - actuators.brake
     apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady, enabled)
     apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
+    print(actuators.gas, actuators.brake, apply_accel, )
 
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_gas = clip(actuators.gas, 0., 1.)
@@ -203,7 +204,7 @@ class CarController(object):
         idx = frame // 2
 
         if CS.CP.carFingerprint in HONDA_BOSCH:
-          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, apply_accel, idx))
+          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, CS.CP.carFingerprint, apply_accel, idx))
         else:
           pump_on, self.last_pump_ts = brake_pump_hysteresys(apply_brake, self.apply_brake_last, self.last_pump_ts)
           can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,

@@ -256,6 +256,7 @@ class CarState(object):
       self.brake_error = 0
     else:
       self.brake_error = 0  #cp.vl["STANDSTILL"]['BRAKE_ERROR_1'] or cp.vl["STANDSTILL"]['BRAKE_ERROR_2']
+      print (cp.vl["STANDSTILL"]['BRAKE_ERROR_1'], cp.vl["STANDSTILL"]['BRAKE_ERROR_2'])
     self.esp_disabled = cp.vl["VSA_STATUS"]['ESP_DISABLED']
 
     # calc best v_ego estimate, by averaging two opposite corners
