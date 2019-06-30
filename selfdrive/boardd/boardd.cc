@@ -89,7 +89,8 @@ void *safety_setter_thread(void *s) {
   // format for board, make copy due to alignment issues, will be freed on out of scope
   auto amsg = kj::heapArray<capnp::word>((value_sz / sizeof(capnp::word)) + 1);
   memcpy(amsg.begin(), value, value_sz);
-
+  free(value);
+  
   capnp::FlatArrayMessageReader cmsg(amsg);
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
 
@@ -143,6 +144,9 @@ void *safety_setter_thread(void *s) {
 
   // set in the mutex to avoid race
   safety_setter_thread_handle = -1;
+
+  // set if long_control is allowed by openpilot. Hardcoded to True for now
+  libusb_control_transfer(dev_handle, 0x40, 0xdf, 1, 0, NULL, 0, TIMEOUT);
 
   libusb_control_transfer(dev_handle, 0x40, 0xdc, safety_setting, safety_param, NULL, 0, TIMEOUT);
 
@@ -403,51 +407,7 @@ void can_send(void *s) {
   free(send);
 }
 
-
 // **** threads ****
-
-void *thermal_thread(void *crap) {
-  int err;
-  LOGD("start thermal thread");
-
-  // thermal = 8005
-  void *context = zmq_ctx_new();
-  void *subscriber = zmq_socket(context, ZMQ_SUB);
-  zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, "", 0);
-  zmq_connect(subscriber, "tcp://127.0.0.1:8005");
-
-  // run as fast as messages come in
-  while (!do_exit) {
-    // recv from thermal
-    zmq_msg_t msg;
-    zmq_msg_init(&msg);
-    err = zmq_msg_recv(&msg, subscriber, 0);
-    assert(err >= 0);
-
-    // format for board, make copy due to alignment issues, will be freed on out of scope
-    // copied from send thread...
-    auto amsg = kj::heapArray<capnp::word>((zmq_msg_size(&msg) / sizeof(capnp::word)) + 1);
-    memcpy(amsg.begin(), zmq_msg_data(&msg), zmq_msg_size(&msg));
-
-    capnp::FlatArrayMessageReader cmsg(amsg);
-    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-    uint16_t target_fan_speed = event.getThermal().getFanSpeed();
-    //LOGW("setting fan speed %d", target_fan_speed);
-
-    pthread_mutex_lock(&usb_lock);
-    libusb_control_transfer(dev_handle, 0xc0, 0xd3, target_fan_speed, 0, NULL, 0, TIMEOUT);
-    pthread_mutex_unlock(&usb_lock);
-
-    zmq_msg_close(&msg);
-  }
-
-  // turn the fan off when we exit
-  libusb_control_transfer(dev_handle, 0xc0, 0xd3, 0, 0, NULL, 0, TIMEOUT);
-
-  return NULL;
-}
-
 void *can_send_thread(void *crap) {
   LOGD("start send thread");
 
@@ -749,16 +709,6 @@ int main() {
   pthread_t can_recv_thread_handle;
   err = pthread_create(&can_recv_thread_handle, NULL,
                        can_recv_thread, NULL);
-  assert(err == 0);
-
-  pthread_t thermal_thread_handle;
-  err = pthread_create(&thermal_thread_handle, NULL,
-                       thermal_thread, NULL);
-  assert(err == 0);
-
-  // join threads
-
-  err = pthread_join(thermal_thread_handle, NULL);
   assert(err == 0);
 
   err = pthread_join(can_recv_thread_handle, NULL);

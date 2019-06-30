@@ -4,7 +4,7 @@ from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip
 from selfdrive.car import create_gas_command
 from selfdrive.car.honda import hondacan
-from selfdrive.car.honda.values import AH, CruiseButtons, CAR, HONDA_BOSCH
+from selfdrive.car.honda.values import AH, CruiseButtons, CAR, HONDA_BOSCH, SPOOF
 from selfdrive.can.packer import CANPacker
 
 # Accel limits
@@ -163,7 +163,7 @@ class CarController(object):
     apply_accel = actuators.gas - actuators.brake
     apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady, enabled)
     apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
-    print(actuators.gas, actuators.brake, apply_accel, )
+    #print(actuators.gas, actuators.brake, apply_accel,)
 
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_gas = clip(actuators.gas, 0., 1.)
@@ -180,6 +180,13 @@ class CarController(object):
       can_sends.append(hondacan.create_radar_VIN_msg(self.radarVin_idx,CS.radarVIN,2,0x17c,CS.useTeslaRadar,CS.radarPosition,CS.radarEpasType))
       self.radarVin_idx += 1
       self.radarVin_idx = self.radarVin_idx  % 3
+
+    if CS.useTeslaRadar and (frame % 100 == 75):
+      for key in SPOOF[CS.CP.carFingerprint]:
+        for x in key:
+            idx = (1 + (frame//100)) % len(key[x])
+            print("   %d  %0.2f  %s   %s" % (frame, idx, x, key[x][idx]))
+            can_sends.append(hondacan.make_can_msg(x, key[x][idx].decode("hex"), None, 0))
 
     # Send steering command.
     idx = frame % 4
@@ -205,6 +212,7 @@ class CarController(object):
 
         if CS.CP.carFingerprint in HONDA_BOSCH:
           can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, CS.CP.carFingerprint, apply_accel, idx))
+
         else:
           pump_on, self.last_pump_ts = brake_pump_hysteresys(apply_brake, self.apply_brake_last, self.last_pump_ts)
           can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,

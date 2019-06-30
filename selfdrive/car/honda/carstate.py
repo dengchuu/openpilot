@@ -261,7 +261,7 @@ class CarState(object):
     #Temporary bandaid for Accord
     if self.CP.carFingerprint == CAR.ACCORD:
       self.brake_error = 0
-      print (cp.vl["STANDSTILL"]['BRAKE_ERROR_1'], cp.vl["STANDSTILL"]['BRAKE_ERROR_2'])
+      #print (cp.vl["STANDSTILL"]['BRAKE_ERROR_1'], cp.vl["STANDSTILL"]['BRAKE_ERROR_2'])
 
     # calc best v_ego estimate, by averaging two opposite corners
     speed_factor = SPEED_FACTOR[self.CP.carFingerprint]

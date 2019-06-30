@@ -357,7 +357,7 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     "active": isActive(state),
     "vEgo": CS.vEgo,
     "vEgoRaw": CS.vEgoRaw,
-    "angleSteers": LaC.damp_angle_steers,
+    "angleSteers": CS.steeringAngle,
     "curvature": VM.calc_curvature(CS.steeringAngle * CV.DEG_TO_RAD, CS.vEgo),
     "steerOverride": CS.steeringPressed,
     "state": state,

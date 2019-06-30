@@ -32,7 +32,7 @@ def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_
   brake_rq = apply_brake > 0
   pcm_fault_cmd = False
 
-  values = {
+  values = { 
     "COMPUTER_BRAKE": apply_brake,
     "BRAKE_PUMP_REQUEST": pump_on,
     "CRUISE_OVERRIDE": pcm_override,
@@ -203,7 +203,7 @@ def create_radar_commands(v_ego, idx):
 
    # car_fingerprint == CAR.PILOT:
   msg_0x301 = "\x00\x00\x56\x02\x58\x00\x00"
-  commands.append(make_can_msg(0x301, msg_0x301, idx, 1))
+  commands.append(make_can_msg(0x301, msg_0x301, idx, 1)) 
 
   return commands
 
