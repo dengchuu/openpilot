@@ -89,7 +89,7 @@ class PathPlanner(object):
     if not mpc_nans:
       self.mpc_angles[0] = angle_steers
       self.mpc_times[0] = rcv_times['model']
-      oversample_limit = 19 if v_ego == 0 else 4 + min(15, int(800.0 / v_ego))
+      oversample_limit = 19 if v_ego == 0 else 4 + min(15, int(400.0 / v_ego))
       for i in range(1,20):
         if i < 6:
           self.mpc_times[i] = self.mpc_times[i-1] + _DT_MPC
