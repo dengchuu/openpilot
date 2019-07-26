@@ -192,6 +192,7 @@ class CarState(object):
     self.blinker_on = 0
     self.lead_distance = 255
     self.hud_distance = 0
+    self.desired_lead_distance = 0
 
     self.left_blinker_on = 0
     self.right_blinker_on = 0

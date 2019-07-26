@@ -499,6 +499,16 @@ class CarInterface(object):
         be.type = 'altButton3'
       buttonEvents.append(be)
 
+    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH) and self.CS.brake_hold:
+      if self.frame % 500 == 0:
+        self.CS.desired_lead_distance += 1
+        print(self.CS.desired_lead_distance, self.CS.hud_distance, self.CS.desired_lead_distance)
+      if self.frame % 200 < 100 and self.CS.hud_distance != (self.CS.desired_lead_distance % 4):
+        #self.CS.prev_cruise_setting = 0
+        self.CS.cruise_setting = 3
+        print("     spamming distance")
+      else:
+        print(self.CS.desired_lead_distance % 4, self.CS.hud_distance )
     if self.CS.cruise_setting != self.CS.prev_cruise_setting:
       be = car.CarState.ButtonEvent.new_message()
       be.type = 'unknown'
@@ -510,8 +520,13 @@ class CarInterface(object):
         but = self.CS.prev_cruise_setting
       if but == 1:
         be.type = 'altButton1'
+      elif but == 2:
+        be.type = 'altButton2'
+      elif but == 3:
+        be.type = 'altButton3'
       # TODO: more buttons?
       buttonEvents.append(be)
+      print(be.type)
     ret.buttonEvents = buttonEvents
 
     # events
@@ -570,7 +585,7 @@ class CarInterface(object):
     for b in ret.buttonEvents:
 
       # do enable on both accel and decel buttons
-      if b.type in ["accelCruise", "decelCruise"] and not b.pressed:
+      if b.type in ["accelCruise", "decelCruise", "altButton3"] and not b.pressed:
         self.last_enable_pressed = cur_time
         enable_pressed = True
 
