@@ -18,6 +18,7 @@ from selfdrive.loggerd.config import ROOT
 
 from common.params import Params
 from common.api import api_get
+from upload_ftp import upload_to_ftp
 
 fake_upload = os.getenv("FAKEUPLOAD") is not None
 
@@ -166,7 +167,6 @@ class Uploader(object):
 
     return None
 
-
   def do_upload(self, key, fn):
     try:
       url_resp = api_get("v1.2/"+self.dongle_id+"/upload_url/", timeout=10, path=key, access_token=self.access_token)
@@ -194,6 +194,7 @@ class Uploader(object):
 
     try:
       self.do_upload(key, fn)
+      upload_to_ftp(self.dongle_id, key, fn)
     except Exception:
       pass
 
