@@ -207,6 +207,7 @@ class CarState(object):
     self.left_blinker_on = 0
     self.right_blinker_on = 0
     self.cruise_mode = 0
+    self.auto_resume = False
 
     self.stopped = 0
 

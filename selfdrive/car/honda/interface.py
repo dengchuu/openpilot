@@ -532,6 +532,7 @@ class CarInterface(object):
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
 
+
     # events
     events = []
 
@@ -567,6 +568,9 @@ class CarInterface(object):
     if self.CP.enableCruise and ret.vEgo < self.CP.minEnableSpeed:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
 
+    if ret.brakePressed and not self.brake_pressed_prev:
+      self.CS.auto_resume = ret.cruiseState.enabled
+
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
     if (ret.gasPressed and not self.gas_pressed_prev and not self.bosch_honda) or \
        (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
@@ -588,7 +592,7 @@ class CarInterface(object):
       events.append(create_event('manualRestart', [ET.WARNING]))
 
     cur_time = self.frame * DT_CTRL
-    enable_pressed = False
+    enable_pressed = False 
     # handle button presses
     for b in ret.buttonEvents:
 
