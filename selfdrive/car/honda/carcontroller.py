@@ -199,36 +199,27 @@ class CarController(object):
             can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
         else:
           can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
-      elif CS.auto_resume and CS.pedal_gas > 0 and CS.v_ego > 0.0:
-        if self.resume_count < 1:
+      elif CS.auto_resume and CS.pedal_gas > 0 and CS.v_ego > 3.0:
+        if self.resume_count < 10:
           can_sends.append(hondacan.spam_buttons_command(self.packer, 0, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
           CS.auto_resuming = False
-          print("  step 1", enabled, self.resume_count, CS.auto_resume)
           self.resume_count += 1
-          #self.events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
-        elif self.resume_count < 10:
+        elif self.resume_count < 20:
           can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
-          #self.events.append(create_event('buttonEnable', [ET.ENABLE]))
           CS.auto_resuming = (self.resume_count < 15)
           self.resume_count += 1
-          print("  step 2", enabled, self.resume_count, CS.auto_resume)
         elif self.resume_count < 30:
           can_sends.append(hondacan.spam_buttons_command(self.packer, 0, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
-          #self.events.append(create_event('buttonEnable', [ET.ENABLE]))
           CS.auto_resuming = False
           self.resume_count += 1
-          print("  step 3", enabled, self.resume_count, CS.auto_resume)
         else:
-          #self.events = []
           CS.auto_resuming = False
           CS.auto_resume = False
           self.resume_count = 0
-          print("  step 4")
       else:
         self.events = []
         self.resume_count = 0
         CS.auto_resuming = False
-        #CS.auto_resume = False
         self.stopped_lead_distance = CS.lead_distance
         self.prev_lead_distance = CS.lead_distance
     else:
