@@ -7,6 +7,7 @@ from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
 from selfdrive.kegman_conf import kegman_conf
+from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, get_events
 
 kegman = kegman_conf()
 
@@ -93,6 +94,8 @@ class CarController(object):
     self.lead_distance_counter_prev = 1
     self.rough_lead_speed = 0.0
     self.resume_count = 0
+    self.event = None
+    self.events = []
 
   def rough_speed(self, lead_distance):
     if self.prev_lead_distance != lead_distance:
@@ -196,27 +199,36 @@ class CarController(object):
             can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
         else:
           can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
-      elif CS.auto_resume and not enabled and CS.pedal_gas > 0 and CS.v_ego > 3.0:
+      elif CS.auto_resume and CS.pedal_gas > 0 and CS.v_ego > 0.0:
         if self.resume_count < 1:
           can_sends.append(hondacan.spam_buttons_command(self.packer, 0, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
           CS.auto_resuming = False
+          print("  step 1", enabled, self.resume_count, CS.auto_resume)
           self.resume_count += 1
-        elif self.resume_count < 5:
+          #self.events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
+        elif self.resume_count < 10:
           can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
-          CS.auto_resuming = True #  (self.resume_count < 10)
+          #self.events.append(create_event('buttonEnable', [ET.ENABLE]))
+          CS.auto_resuming = (self.resume_count < 15)
           self.resume_count += 1
-        elif self.resume_count < 20:
+          print("  step 2", enabled, self.resume_count, CS.auto_resume)
+        elif self.resume_count < 30:
           can_sends.append(hondacan.spam_buttons_command(self.packer, 0, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
+          #self.events.append(create_event('buttonEnable', [ET.ENABLE]))
           CS.auto_resuming = False
           self.resume_count += 1
+          print("  step 3", enabled, self.resume_count, CS.auto_resume)
         else:
+          #self.events = []
           CS.auto_resuming = False
           CS.auto_resume = False
           self.resume_count = 0
+          print("  step 4")
       else:
+        self.events = []
         self.resume_count = 0
         CS.auto_resuming = False
-        CS.auto_resume = False
+        #CS.auto_resume = False
         self.stopped_lead_distance = CS.lead_distance
         self.prev_lead_distance = CS.lead_distance
     else:
