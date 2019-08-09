@@ -197,14 +197,26 @@ class CarController(object):
         else:
           can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
       elif CS.auto_resume and not enabled and CS.pedal_gas > 0 and CS.v_ego > 3.0:
-        if self.resume_count < 5:
+        if self.resume_count < 1:
+          can_sends.append(hondacan.spam_buttons_command(self.packer, 0, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
+          CS.auto_resuming = False
+          self.resume_count += 1
+        elif self.resume_count < 5:
           can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
+          CS.auto_resuming = True #  (self.resume_count < 10)
+          self.resume_count += 1
+        elif self.resume_count < 20:
+          can_sends.append(hondacan.spam_buttons_command(self.packer, 0, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
+          CS.auto_resuming = False
           self.resume_count += 1
         else:
+          CS.auto_resuming = False
           CS.auto_resume = False
           self.resume_count = 0
       else:
         self.resume_count = 0
+        CS.auto_resuming = False
+        CS.auto_resume = False
         self.stopped_lead_distance = CS.lead_distance
         self.prev_lead_distance = CS.lead_distance
     else:

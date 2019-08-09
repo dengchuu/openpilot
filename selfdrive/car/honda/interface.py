@@ -532,7 +532,6 @@ class CarInterface(object):
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
 
-
     # events
     events = []
 
@@ -576,7 +575,7 @@ class CarInterface(object):
        (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
-    if ret.gasPressed and not self.bosch_honda:
+    if ret.gasPressed and (not self.bosch_honda or self.CS.auto_resuming):
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
     # it can happen that car cruise disables while comma system is enabled: need to
@@ -592,7 +591,7 @@ class CarInterface(object):
       events.append(create_event('manualRestart', [ET.WARNING]))
 
     cur_time = self.frame * DT_CTRL
-    enable_pressed = False 
+    enable_pressed = False
     # handle button presses
     for b in ret.buttonEvents:
 
@@ -616,6 +615,8 @@ class CarInterface(object):
          (enable_pressed and get_events(events, [ET.NO_ENTRY])):
         events.append(create_event('buttonEnable', [ET.ENABLE]))
         self.last_enable_sent = cur_time
+      elif self.CS.auto_resume and ret.cruiseState.enabled:
+        events.append(create_event('buttonEnable', [ET.ENABLE]))
     elif enable_pressed:
       events.append(create_event('buttonEnable', [ET.ENABLE]))
 
