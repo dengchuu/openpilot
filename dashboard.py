@@ -218,7 +218,7 @@ def dashboard_thread(rate=100):
             #print(dat)
 
             if lateral_type == "pid":
-              influxDataString += ("%0.3f,%0.3f,%0.3f,%0.2f,%0.3f,%0.4f,%d,%0.1f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%d|" %
+              influxDataString += ("%0.3f,%0.3f,%0.3f,%0.3f,%0.4f,%0.4f,%d,%0.1f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%d|" %
                   (dat.lateralControlState.pidState.angleFFRatio, dat.dampAngleSteersDes, dat.angleSteersDes, dat.angleSteers, dat.dampAngleSteers, dat.lateralControlState.pidState.angleBias, dat.steerOverride, vEgo,
                   dat.lateralControlState.pidState.p2, dat.lateralControlState.pidState.p, dat.lateralControlState.pidState.i, dat.lateralControlState.pidState.f,dat.lateralControlState.pidState.output, receiveTime))
             else:

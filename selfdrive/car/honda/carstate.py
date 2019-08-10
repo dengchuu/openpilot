@@ -296,6 +296,9 @@ class CarState(object):
     self.gear = 0 if self.CP.carFingerprint == CAR.CIVIC else cp.vl["GEARBOX"]['GEAR']
     self.angle_steers = cp.vl["STEERING_SENSORS"]['STEER_ANGLE']
     self.angle_steers_rate = cp.vl["STEERING_SENSORS"]['STEER_ANGLE_RATE']
+
+    self.auto_resume = self.auto_resume and abs(self.angle_steers) < 30.0
+
     steer_counter = cp.vl["STEERING_SENSORS"]['COUNTER']
     if not (steer_counter == (self.prev_steering_counter + 1) % 4):
       if steer_counter == self.prev_steering_counter:
