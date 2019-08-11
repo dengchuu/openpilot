@@ -278,6 +278,7 @@ class CarInterface(object):
       ret.longitudinalTuning.kiV = [0.18, 0.12]
       ret.lateralTuning.pid.dampTime = 0.0
       ret.lateralTuning.pid.rateFFGain = 0.4
+      ret.steerLimitAlert = False
 
     elif candidate == CAR.ACURA_RDX:
       stop_and_go = False
