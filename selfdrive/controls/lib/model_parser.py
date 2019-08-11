@@ -2,7 +2,10 @@ from common.numpy_fast import interp
 import numpy as np
 from selfdrive.controls.lib.latcontrol_helpers import model_polyfit, calc_desired_path, compute_path_pinv
 
-CAMERA_OFFSET = 0.06  # m from center car to camera
+from selfdrive.kegman_conf import kegman_conf
+
+kegman = kegman_conf()
+CAMERA_OFFSET = float(kegman.conf['cameraOffset'])  # m from center car to camera
 
 class ModelParser(object):
   def __init__(self):
@@ -34,6 +37,11 @@ class ModelParser(object):
       l_poly = model_polyfit(md.leftLane.points, self._path_pinv)  # left line
       r_poly = model_polyfit(md.rightLane.points, self._path_pinv)  # right line
       p_poly = model_polyfit(md.path.points, self._path_pinv)  # predicted path
+
+    #l_offset_factor = ((l_poly[3] - CAMERA_OFFSET) / max(0.01, l_poly[3]))
+    #r_offset_factor = ((r_poly[3] - CAMERA_OFFSET) / min(-0.01, r_poly[3]))
+    #l_poly[2] *= l_offset_factor
+    #r_poly[2] *= r_offset_factor
 
     # only offset left and right lane lines; offsetting p_poly does not make sense
     l_poly[3] += CAMERA_OFFSET
