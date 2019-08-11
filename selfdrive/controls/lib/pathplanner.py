@@ -63,7 +63,7 @@ class PathPlanner(object):
     cur_time = sec_since_boot()
     angle_offset_average = sm['liveParameters'].angleOffsetAverage
 
-    max_offset_change = 0.001 / (abs(self.angle_offset) + 0.0001)
+    max_offset_change = min(0.01, 0.001 / (abs(self.angle_offset) + 0.0001))
     self.angle_offset = np.clip(angle_offset_average + sm['controlsState'].lateralControlState.pidState.angleBias, self.angle_offset - max_offset_change, self.angle_offset + max_offset_change)
 
     self.MP.update(v_ego, sm['model'])

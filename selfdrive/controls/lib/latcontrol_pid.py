@@ -142,7 +142,7 @@ class LatControlPID(object):
     pid_log.steerAngle = float(angle_steers)
     pid_log.steerRate = float(angle_steers_rate)
 
-    max_bias_change = 0.0002 / (abs(self.angle_bias) + 0.0001)
+    max_bias_change = min(0.002, 0.0002 / (abs(self.angle_bias) + 0.0001))
     self.angle_bias = float(np.clip(live_params.angleOffset - live_params.angleOffsetAverage, self.angle_bias - max_bias_change, self.angle_bias + max_bias_change))
     self.live_tune(CP)
 
