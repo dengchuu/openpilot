@@ -144,7 +144,7 @@ class CarState(object):
 
     if self.CP.carFingerprint in NO_DSU_CAR: # Vehicle that needs offsetting
       self.angle_steers = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] - self.steer_offset
-      if self.steer_offset == 0.0:
+      if self.steer_offset == 0.0 and self.angle_steers > 1 and cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] > 1:
         self.steer_offset = self.angle_steers - cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] - cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
     elif self.CP.carFingerprint in TSS2_CAR:
       self.angle_steers = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']
