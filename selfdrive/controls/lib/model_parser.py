@@ -1,4 +1,4 @@
-from common.numpy_fast import interp
+from common.numpy_fast import interp, clip
 import numpy as np
 from selfdrive.controls.lib.latcontrol_helpers import model_polyfit, calc_desired_path, compute_path_pinv
 
@@ -38,10 +38,8 @@ class ModelParser(object):
       r_poly = model_polyfit(md.rightLane.points, self._path_pinv)  # right line
       p_poly = model_polyfit(md.path.points, self._path_pinv)  # predicted path
 
-    l_offset_factor = ((l_poly[3] - CAMERA_OFFSET) / max(0.01, l_poly[3]))
-    r_offset_factor = ((r_poly[3] - CAMERA_OFFSET) / min(-0.01, r_poly[3]))
-    l_poly[2] *= l_offset_factor
-    r_poly[2] *= r_offset_factor
+    l_poly[2] *= ((l_poly[3] - CAMERA_OFFSET) / max(0.01, l_poly[3]))
+    r_poly[2] *= ((r_poly[3] - CAMERA_OFFSET) / min(-0.01, r_poly[3]))
 
     # only offset left and right lane lines; offsetting p_poly does not make sense
     l_poly[3] += CAMERA_OFFSET
@@ -71,10 +69,10 @@ class ModelParser(object):
     r_center = r_prob * (r_poly[3] + half_lane_width)
     p_prob = 0.0001 + (self.c_prob**2 + self.p_prob**2) / (self.c_prob + self.p_prob + 0.0001)
 
-    self.p_poly[3] = np.clip(0.0, self.p_poly[3] - 0.005, self.p_poly[3] + 0.005)
-    self.p_poly[2] = np.clip(0.0, self.p_poly[2] - 0.001, self.p_poly[2] + 0.001)
-    self.p_poly[1] = np.clip(0.0, self.p_poly[1] - 0.0001, self.p_poly[1] + 0.0001)
-    #self.p_poly[0] = np.clip(0.0, self.p_poly[0] - 0.00001, self.p_poly[0] + 0.00001)
+    self.p_poly[3] = clip(0.0, self.p_poly[3] - 0.005, self.p_poly[3] + 0.005)
+    self.p_poly[2] = clip(0.0, self.p_poly[2] - 0.001, self.p_poly[2] + 0.001)
+    self.p_poly[1] = clip(0.0, self.p_poly[1] - 0.0001, self.p_poly[1] + 0.0001)
+    #self.p_poly[0] = clip(0.0, self.p_poly[0] - 0.00001, self.p_poly[0] + 0.00001)
 
     if l_center < 0.0 or r_center > 0.0:
       if l_center > -r_center:
@@ -82,7 +80,7 @@ class ModelParser(object):
       else:
         p_poly[3] = (l_center + p_prob * self.p_poly[3]) / (l_prob + p_prob + 0.0001)
 
-      race_line_adjust = np.interp(abs(p_poly[3]), [0.0, 0.3], [0.0, 1.0])
+      race_line_adjust = interp(abs(p_poly[3]), [0.0, 0.3], [0.0, 1.0])
       l_race_poly = (race_line_adjust * l_poly * l_prob + p_prob * self.p_poly) / (race_line_adjust * l_prob + p_prob + 0.0001)
       r_race_poly = (race_line_adjust * r_poly * r_prob + p_prob * self.p_poly) / (race_line_adjust * r_prob + p_prob + 0.0001)
       if self.d_poly[1] < 0.0:
