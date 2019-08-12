@@ -629,7 +629,6 @@ class CarInterface(object):
     elif enable_pressed:
       events.append(create_event('buttonEnable', [ET.ENABLE]))
 
-    if self.CC is not None and len(self.CC.events) > 0: events.append(self.CC.events)
     ret.events = events
 
     # update previous brake/gas pressed

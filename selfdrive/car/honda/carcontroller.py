@@ -94,8 +94,6 @@ class CarController(object):
     self.lead_distance_counter_prev = 1
     self.rough_lead_speed = 0.0
     self.resume_count = 0
-    self.event = None
-    self.events = []
 
   def rough_speed(self, lead_distance):
     if self.prev_lead_distance != lead_distance:
@@ -196,7 +194,7 @@ class CarController(object):
           print(self.stopped_lead_distance, CS.lead_distance, rough_lead_speed)
         elif CS.CP.carFingerprint in (CAR.CIVIC_BOSCH, CAR.CRV_HYBRID):
           if CS.hud_lead == 1:
-            can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
+            can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
         else:
           can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))
       elif CS.auto_resume and CS.pedal_gas > 0 and CS.v_ego > 3.0:
@@ -217,7 +215,6 @@ class CarController(object):
           CS.auto_resume = False
           self.resume_count = 0
       else:
-        self.events = []
         self.resume_count = 0
         CS.auto_resuming = False
         self.stopped_lead_distance = CS.lead_distance
